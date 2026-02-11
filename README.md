@@ -1,33 +1,17 @@
-# QR Code Generator
+# Valentine's Proposal 💕
 
-A beautiful, modern QR code generator that creates QR codes for any URL.
+A beautiful, interactive Valentine's Day proposal experience with clues, outfit picker, and a romantic proposal moment.
 
 ## Features
 
-- 🎯 Generate QR codes instantly
-- 📱 Mobile-friendly design
-- 💾 Download QR codes as PNG images
-- ✨ Beautiful gradient UI
-- ✅ URL validation
+- 💌 Envelope opening animation
+- 🔍 Three clue cards leading to the proposal
+- 👗 Outfit picker for the special night
+- 🗺️ Adventure map preview
+- 💍 "Will you marry me?" proposal
+- 🎉 Celebration screen with confetti
 
 ## Deploy to Vercel
 
-This project is ready to deploy to Vercel!
-
-### Quick Deploy
-
-1. Install Vercel CLI (if you haven't already):
-   ```bash
-   npm install -g vercel
-   ```
-
-2. Deploy:
-   ```bash
-   vercel
-   ```
-
-3. Follow the prompts and your site will be live!
-
-## Local Usage
-
-Simply open `index.html` in your browser.
+1. Go to [vercel.com](https://vercel.com) and import this repository
+2. Deploy — your link will lead directly to the proposal!
