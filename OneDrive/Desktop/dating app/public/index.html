@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus — Where Souls Connect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="hypno-bg"></div>
+  <div class="grain"></div>
+
+  <nav class="nav">
+    <a href="/" class="logo">Nexus<span>.</span></a>
+    <div class="nav-right">
+      <span class="nav-tagline">where souls connect</span>
+    </div>
+  </nav>
+
+  <main class="feed-layout">
+    <aside class="sidebar sidebar-left">
+      <div class="current-user">
+        <span class="avatar">🌙</span>
+        <div>
+          <span class="name">Luna</span>
+          <span class="handle">@luna_midnight</span>
+        </div>
+      </div>
+      <ul class="side-links">
+        <li><a href="#" class="active">Feed</a></li>
+        <li><a href="#">Explore</a></li>
+        <li><a href="#">Connections</a></li>
+      </ul>
+    </aside>
+
+    <section class="feed-main">
+      <div class="composer">
+        <div class="composer-avatar">🌙</div>
+        <div class="composer-body">
+          <textarea id="postInput" placeholder="What's on your mind?" rows="2"></textarea>
+          <button id="postBtn" class="btn-post">Share</button>
+        </div>
+      </div>
+
+      <div id="feed" class="posts"></div>
+      <p id="emptyState" class="empty-state">Loading your feed...</p>
+    </section>
+
+    <aside class="sidebar sidebar-right">
+      <div class="card">
+        <h3>Explore</h3>
+        <p>Find people who resonate with your vibe.</p>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Comment modal -->
+  <div id="commentModal" class="modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <button class="modal-close" aria-label="Close">&times;</button>
+      <div id="modalPost"></div>
+      <div class="comments-section">
+        <h4>Comments</h4>
+        <div id="commentsList"></div>
+        <div class="comment-form">
+          <textarea id="commentInput" placeholder="Write a comment..." rows="2"></textarea>
+          <button id="commentBtn" class="btn-comment">Comment</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
