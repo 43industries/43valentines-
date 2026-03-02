@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Investor Portal — 43 Industries</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --black: #0a0a0a; --white: #f0ede6; --accent: #ff3c1f; --border: rgba(240,237,230,0.12); --green: #00ffa3; --muted: #777; }
+    body { background: var(--black); color: var(--white); font-family: 'DM Sans', sans-serif; font-weight: 300; min-height: 100vh; padding: 2rem 4rem; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; }
+    .logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.08em; }
+    .logo span { color: var(--accent); }
+    .header-link { font-size: 0.8rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); text-decoration: none; }
+    .header-link:hover { color: var(--white); }
+    main { max-width: 960px; margin: 0 auto; }
+    h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.4rem; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+    .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 2rem; max-width: 520px; }
+    .card { border: 1px solid var(--border); background: #101010; padding: 1.75rem 2rem; margin-bottom: 1.5rem; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .card-title { font-size: 0.8rem; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.8; }
+    .pill { font-size: 0.7rem; padding: 0.25rem 0.6rem; border-radius: 999px; border: 1px solid var(--border); opacity: 0.7; }
+    label { display: block; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 0.35rem; opacity: 0.7; }
+    input, select, textarea { width: 100%; background: transparent; border: 1px solid var(--border); padding: 0.55rem 0.7rem; font-family: inherit; font-size: 0.9rem; color: var(--white); outline: none; }
+    input::placeholder, textarea::placeholder { color: rgba(240,237,230,0.35); }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    .field-row { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1rem; margin-bottom: 1rem; }
+    .field { margin-bottom: 1rem; }
+    .btn-primary { border: none; background: var(--accent); color: var(--black); padding: 0.7rem 1.6rem; font-size: 0.78rem; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-secondary { border: 1px solid var(--border); background: transparent; color: var(--white); padding: 0.55rem 1.3rem; font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; }
+    .btn-secondary:hover { border-color: var(--white); }
+    .btn-inline-row { display: flex; gap: 0.75rem; align-items: center; margin-top: 0.5rem; }
+    .error { color: var(--accent); font-size: 0.8rem; margin-top: 0.5rem; }
+    .success { color: var(--green); font-size: 0.8rem; margin-top: 0.5rem; }
+    .muted { color: var(--muted); font-size: 0.8rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.75rem; }
+    th, td { padding: 0.6rem 0.3rem; text-align: left; border-bottom: 1px solid rgba(240,237,230,0.08); }
+    th { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.7; }
+    td.status { text-transform: capitalize; }
+    .empty { text-align: center; padding: 1.5rem 0.5rem; color: var(--muted); font-size: 0.85rem; }
+    @media (max-width: 900px) {
+      body { padding: 1.5rem 1.5rem; }
+      header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+      .field-row { grid-template-columns: 1fr; }
+    }
+  </style>
+  <!-- Supabase JS (browser) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+  <header>
+    <div class="logo">43<span>.</span>Industries</div>
+    <a href="index.html" class="header-link">Back to main site</a>
+  </header>
+
+  <main>
+    <h1>Investor Portal</h1>
+    <p class="subtitle">
+      Sign in to view a personal snapshot of your commitments with 43 Industries. This is a light, product-style portal for investors and partners.
+    </p>
+
+    <!-- Auth card -->
+    <section id="auth-card" class="card">
+      <div class="card-header">
+        <div class="card-title">Access</div>
+        <button type="button" id="auth-mode-toggle" class="btn-secondary">Switch to Sign up</button>
+      </div>
+      <div id="auth-form">
+        <div class="field-row">
+          <div class="field">
+            <label for="auth-email">Email</label>
+            <input id="auth-email" type="email" autocomplete="email" placeholder="you@example.com">
+          </div>
+          <div class="field">
+            <label for="auth-password">Password</label>
+            <input id="auth-password" type="password" autocomplete="current-password" placeholder="Minimum 8 characters">
+          </div>
+        </div>
+        <div class="field" id="auth-name-field" style="display:none">
+          <label for="auth-name">Full name</label>
+          <input id="auth-name" type="text" autocomplete="name" placeholder="Optional for now">
+        </div>
+        <div class="btn-inline-row">
+          <button type="button" id="auth-submit" class="btn-primary">Sign in</button>
+          <button type="button" id="signout-btn" class="btn-secondary" style="display:none">Sign out</button>
+        </div>
+        <p id="auth-status" class="muted" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <!-- Dashboard (hidden until logged in) -->
+    <section id="dashboard" style="display:none">
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title">Account</div>
+          <span id="profile-pill" class="pill">Signed in</span>
+        </div>
+        <p class="muted" id="profile-summary">Loading profile…</p>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title">New commitment</div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="inv-amount">Amount</label>
+            <input id="inv-amount" type="number" step="0.01" min="0" placeholder="e.g. 100000">
+          </div>
+          <div class="field">
+            <label for="inv-currency">Currency</label>
+            <select id="inv-currency">
+              <option value="USD">USD</option>
+              <option value="KES">KES</option>
+              <option value="USDT">USDT</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="inv-note">Note (optional)</label>
+          <textarea id="inv-note" rows="2" placeholder="Short context — e.g. Fund I, tranche, or structure."></textarea>
+        </div>
+        <div class="btn-inline-row">
+          <button type="button" id="inv-submit" class="btn-primary">Record commitment</button>
+          <p id="inv-status" class="muted" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title">My investments</div>
+          <span id="total-pill" class="pill">Total: —</span>
+        </div>
+        <div id="investments-container">
+          <table id="investments-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Currency</th>
+                <th>Note</th>
+              </tr>
+            </thead>
+            <tbody id="investments-body">
+            </tbody>
+          </table>
+          <div id="investments-empty" class="empty" style="display:none">
+            No investments recorded yet. Your commitments will appear here once you or the team add them.
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    // 1) Configure Supabase (replace placeholders with your project values)
+    // Get these from Supabase → Settings → API:
+    // - Project URL = SUPABASE_URL
+    // - anon public key = SUPABASE_ANON_KEY (safe to expose in browser)
+    const SUPABASE_URL = 'https://xxxxx.supabase.co';       // TODO: replace
+    const SUPABASE_ANON_KEY = 'eyJhbGc...';                 // TODO: replace
+
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const authCard = document.getElementById('auth-card');
+    const dashboard = document.getElementById('dashboard');
+    const authModeToggle = document.getElementById('auth-mode-toggle');
+    const authEmail = document.getElementById('auth-email');
+    const authPassword = document.getElementById('auth-password');
+    const authName = document.getElementById('auth-name');
+    const authNameField = document.getElementById('auth-name-field');
+    const authSubmit = document.getElementById('auth-submit');
+    const signoutBtn = document.getElementById('signout-btn');
+    const authStatus = document.getElementById('auth-status');
+    const profileSummary = document.getElementById('profile-summary');
+    const profilePill = document.getElementById('profile-pill');
+    const invAmount = document.getElementById('inv-amount');
+    const invCurrency = document.getElementById('inv-currency');
+    const invNote = document.getElementById('inv-note');
+    const invSubmit = document.getElementById('inv-submit');
+    const invStatus = document.getElementById('inv-status');
+    const invBody = document.getElementById('investments-body');
+    const invEmpty = document.getElementById('investments-empty');
+    const totalPill = document.getElementById('total-pill');
+
+    let authMode = 'signin'; // or 'signup'
+
+    function setAuthStatus(msg, isError) {
+      authStatus.textContent = msg || '';
+      if (!msg) return;
+      authStatus.className = isError ? 'error' : 'success';
+    }
+
+    function setInvStatus(msg, isError) {
+      invStatus.textContent = msg || '';
+      if (!msg) return;
+      invStatus.className = isError ? 'error' : 'success';
+    }
+
+    authModeToggle.addEventListener('click', () => {
+      if (authMode === 'signin') {
+        authMode = 'signup';
+        authModeToggle.textContent = 'Switch to Sign in';
+        authSubmit.textContent = 'Sign up';
+        authNameField.style.display = 'block';
+        setAuthStatus('', false);
+      } else {
+        authMode = 'signin';
+        authModeToggle.textContent = 'Switch to Sign up';
+        authSubmit.textContent = 'Sign in';
+        authNameField.style.display = 'none';
+        setAuthStatus('', false);
+      }
+    });
+
+    authSubmit.addEventListener('click', async () => {
+      const email = authEmail.value.trim();
+      const password = authPassword.value.trim();
+      const fullName = authName.value.trim();
+
+      if (!email || !password) {
+        setAuthStatus('Email and password are required.', true);
+        return;
+      }
+      setAuthStatus('Processing…', false);
+      authSubmit.disabled = true;
+
+      try {
+        if (authMode === 'signup') {
+          const { data, error } = await supabaseClient.auth.signUp({
+            email,
+            password,
+            options: { data: { full_name: fullName || null } },
+          });
+          if (error) throw error;
+          if (data.user) {
+            setAuthStatus('Account created. You may need to verify your email before full access.', false);
+            await ensureProfile(data.user);
+            await loadSessionAndData();
+          } else {
+            setAuthStatus('Sign up started. Check your email for confirmation.', false);
+          }
+        } else {
+          const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+          if (data.user) {
+            setAuthStatus('Signed in.', false);
+            await ensureProfile(data.user);
+            await loadSessionAndData();
+          }
+        }
+      } catch (e) {
+        setAuthStatus(e.message || 'Auth failed.', true);
+      } finally {
+        authSubmit.disabled = false;
+      }
+    });
+
+    signoutBtn.addEventListener('click', async () => {
+      await supabaseClient.auth.signOut();
+      dashboard.style.display = 'none';
+      profileSummary.textContent = 'Not signed in.';
+      profilePill.textContent = 'Signed out';
+      setAuthStatus('Signed out.', false);
+      authCard.style.display = 'block';
+      signoutBtn.style.display = 'none';
+    });
+
+    async function ensureProfile(user) {
+      if (!user) return;
+      const userId = user.id;
+      const { data, error } = await supabaseClient
+        .from('investor_profiles')
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle();
+      if (error && error.code !== 'PGRST116') {
+        // ignore "no rows" error-like conditions
+        return;
+      }
+      if (!data) {
+        await supabaseClient.from('investor_profiles').insert({
+          id: userId,
+          full_name: user.user_metadata?.full_name || null,
+          role: null,
+        });
+      }
+    }
+
+    async function loadSessionAndData() {
+      const { data } = await supabaseClient.auth.getUser();
+      const user = data.user;
+      if (!user) {
+        dashboard.style.display = 'none';
+        signoutBtn.style.display = 'none';
+        profileSummary.textContent = 'Not signed in.';
+        return;
+      }
+
+      authCard.style.display = 'block';
+      dashboard.style.display = 'block';
+      signoutBtn.style.display = 'inline-block';
+      profilePill.textContent = 'Signed in';
+
+      const { data: profile } = await supabaseClient
+        .from('investor_profiles')
+        .select('full_name, role, created_at')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      const name = profile?.full_name || user.email;
+      const role = profile?.role || 'Investor / Partner';
+      const created = profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : '';
+      profileSummary.textContent = `${name} — ${role}${created ? ' · since ' + created : ''}`;
+
+      await loadInvestments();
+    }
+
+    async function loadInvestments() {
+      const { data, error } = await supabaseClient
+        .from('investments')
+        .select('id, amount, currency, status, note, created_at')
+        .order('created_at', { ascending: false });
+      if (error) {
+        invBody.innerHTML = '';
+        invEmpty.style.display = 'block';
+        totalPill.textContent = 'Total: —';
+        return;
+      }
+      const rows = data || [];
+      invBody.innerHTML = '';
+      if (!rows.length) {
+        invEmpty.style.display = 'block';
+        totalPill.textContent = 'Total: —';
+        return;
+      }
+      invEmpty.style.display = 'none';
+      let total = 0;
+      rows.forEach((inv) => {
+        total += Number(inv.amount || 0);
+        const tr = document.createElement('tr');
+        const date = inv.created_at
+          ? new Date(inv.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+          : '—';
+        tr.innerHTML = `
+          <td>${escapeHtml(date)}</td>
+          <td>${Number(inv.amount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+          <td class="status">${escapeHtml(inv.status || 'pending')}</td>
+          <td>${escapeHtml(inv.currency || '')}</td>
+          <td>${escapeHtml(inv.note || '')}</td>
+        `;
+        invBody.appendChild(tr);
+      });
+      totalPill.textContent = 'Total: ' + total.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    }
+
+    invSubmit.addEventListener('click', async () => {
+      const amount = parseFloat(invAmount.value);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        setInvStatus('Enter a positive amount.', true);
+        return;
+      }
+      setInvStatus('Saving…', false);
+      invSubmit.disabled = true;
+      try {
+        const { data: userData } = await supabaseClient.auth.getUser();
+        const user = userData.user;
+        if (!user) {
+          setInvStatus('Please sign in first.', true);
+          return;
+        }
+        const payload = {
+          investor_id: user.id,
+          amount,
+          currency: invCurrency.value || 'USD',
+          status: 'pending',
+          note: invNote.value.trim() || null,
+        };
+        const { error } = await supabaseClient.from('investments').insert(payload);
+        if (error) throw error;
+        invAmount.value = '';
+        invNote.value = '';
+        setInvStatus('Commitment recorded. You or the team can update its status later.', false);
+        await loadInvestments();
+      } catch (e) {
+        setInvStatus(e.message || 'Could not save investment.', true);
+      } finally {
+        invSubmit.disabled = false;
+      }
+    });
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+      return String(text).replace(/[&<>"']/g, (m) => map[m]);
+    }
+
+    // On load, try to restore session and show dashboard if already signed in.
+    (async () => {
+      await loadSessionAndData();
+    })();
+  </script>
+</body>
+</html>
+
