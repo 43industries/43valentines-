@@ -39,7 +39,37 @@
     th, td { padding: 0.6rem 0.3rem; text-align: left; border-bottom: 1px solid rgba(240,237,230,0.08); }
     th { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.7; }
     td.status { text-transform: capitalize; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .badge.pending { background: rgba(255,60,31,0.12); color: var(--accent); }
+    .badge.committed { background: rgba(0,255,163,0.12); color: var(--green); }
+    .badge.active { background: rgba(0,255,163,0.12); color: var(--green); }
+    .badge.exited { background: rgba(240,237,230,0.08); color: var(--muted); }
+    .filters { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+    .filter-chip {
+      border: 1px solid var(--border);
+      padding: 0.25rem 0.7rem;
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .filter-chip.active {
+      border-color: var(--accent);
+      color: var(--white);
+    }
     .empty { text-align: center; padding: 1.5rem 0.5rem; color: var(--muted); font-size: 0.85rem; }
+    .admin-note { font-size: 0.75rem; color: var(--muted); margin-top: 0.75rem; }
+    .admin-error { font-size: 0.8rem; color: var(--accent); margin-top: 0.5rem; }
     @media (max-width: 900px) {
       body { padding: 1.5rem 1.5rem; }
       header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
@@ -58,7 +88,7 @@
   <main>
     <h1>Investor Portal</h1>
     <p class="subtitle">
-      Sign in to view a personal snapshot of your commitments with 43 Industries. This is a light, product-style portal for investors and partners.
+      Sign in to view a personal snapshot of your commitments with 43 Industries. This is a light, informational portal for investors and partners — it is not a trading interface or brokerage account.
     </p>
 
     <!-- Auth card -->
@@ -102,6 +132,41 @@
 
       <section class="card">
         <div class="card-header">
+          <div class="card-title">Admin overview</div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="admin-key">Admin access key</label>
+            <input id="admin-key" type="password" placeholder="Same key used for leads admin view">
+          </div>
+          <div class="field" style="align-self:flex-end;">
+            <button type="button" id="admin-load" class="btn-secondary">Load all investors</button>
+          </div>
+        </div>
+        <p id="admin-status" class="admin-error" style="display:none"></p>
+        <p class="admin-note">
+          This section is for internal use. It calls a Netlify function with the admin key (the same
+          `ADMIN_SECRET` used for <code>admin.html</code>) to load all investor profiles and
+          commitments from Supabase using the service role key.
+        </p>
+        <div id="admin-table-wrapper" style="margin-top:1.25rem; display:none;">
+          <table>
+            <thead>
+              <tr>
+                <th>Investor</th>
+                <th>Email</th>
+                <th>Committed</th>
+                <th>Currency</th>
+                <th>Count</th>
+              </tr>
+            </thead>
+            <tbody id="admin-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
           <div class="card-title">New commitment</div>
         </div>
         <div class="field-row">
@@ -130,7 +195,15 @@
 
       <section class="card">
         <div class="card-header">
-          <div class="card-title">My investments</div>
+          <div>
+            <div class="card-title">My investments</div>
+            <div class="filters">
+              <button type="button" class="filter-chip active" data-status="all">All</button>
+              <button type="button" class="filter-chip" data-status="active">Active</button>
+              <button type="button" class="filter-chip" data-status="pending">Pending</button>
+              <button type="button" class="filter-chip" data-status="exited">Exited</button>
+            </div>
+          </div>
           <span id="total-pill" class="pill">Total: —</span>
         </div>
         <div id="investments-container">
@@ -185,8 +258,16 @@
     const invBody = document.getElementById('investments-body');
     const invEmpty = document.getElementById('investments-empty');
     const totalPill = document.getElementById('total-pill');
+    const filterChips = Array.from(document.querySelectorAll('.filter-chip'));
+    const adminKeyInput = document.getElementById('admin-key');
+    const adminLoadBtn = document.getElementById('admin-load');
+    const adminStatus = document.getElementById('admin-status');
+    const adminTableWrapper = document.getElementById('admin-table-wrapper');
+    const adminBody = document.getElementById('admin-body');
 
     let authMode = 'signin'; // or 'signup'
+    let currentFilter = 'all';
+    let cachedInvestments = [];
 
     function setAuthStatus(msg, isError) {
       authStatus.textContent = msg || '';
@@ -223,6 +304,10 @@
 
       if (!email || !password) {
         setAuthStatus('Email and password are required.', true);
+        return;
+      }
+      if (authMode === 'signup' && password.length < 8) {
+        setAuthStatus('Password must be at least 8 characters.', true);
         return;
       }
       setAuthStatus('Processing…', false);
@@ -319,42 +404,126 @@
       await loadInvestments();
     }
 
+    filterChips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        filterChips.forEach((c) => c.classList.remove('active'));
+        chip.classList.add('active');
+        currentFilter = chip.getAttribute('data-status') || 'all';
+        renderInvestments();
+      });
+    });
+
+    adminLoadBtn.addEventListener('click', async () => {
+      adminStatus.style.display = 'none';
+      adminStatus.textContent = '';
+      const key = adminKeyInput.value.trim();
+      if (!key) {
+        adminStatus.textContent = 'Enter the admin access key.';
+        adminStatus.style.display = 'block';
+        return;
+      }
+      adminLoadBtn.disabled = true;
+      try {
+        const res = await fetch('/.netlify/functions/get-investments-admin', {
+          headers: { 'X-Admin-Key': key },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          adminStatus.textContent = data.error || 'Failed to load admin overview.';
+          adminStatus.style.display = 'block';
+          adminTableWrapper.style.display = 'none';
+          adminBody.innerHTML = '';
+          return;
+        }
+        const rows = data.rows || [];
+        adminBody.innerHTML = '';
+        if (!rows.length) {
+          adminBody.innerHTML = '<tr><td colspan="5" class="empty">No investments found.</td></tr>';
+        } else {
+          rows.forEach((row) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${escapeHtml(row.name || '—')}</td>
+              <td>${escapeHtml(row.email || '—')}</td>
+              <td>${Number(row.total_amount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+              <td>${escapeHtml(row.currency || '')}</td>
+              <td>${escapeHtml(String(row.count || 0))}</td>
+            `;
+            adminBody.appendChild(tr);
+          });
+        }
+        adminTableWrapper.style.display = 'block';
+      } catch (e) {
+        adminStatus.textContent = 'Network error while loading admin view.';
+        adminStatus.style.display = 'block';
+        adminTableWrapper.style.display = 'none';
+        adminBody.innerHTML = '';
+      } finally {
+        adminLoadBtn.disabled = false;
+      }
+    });
+
     async function loadInvestments() {
       const { data, error } = await supabaseClient
         .from('investments')
         .select('id, amount, currency, status, note, created_at')
         .order('created_at', { ascending: false });
       if (error) {
-        invBody.innerHTML = '';
-        invEmpty.style.display = 'block';
-        totalPill.textContent = 'Total: —';
+        cachedInvestments = [];
+        renderInvestments();
         return;
       }
-      const rows = data || [];
+      cachedInvestments = data || [];
+      renderInvestments();
+    }
+
+    function renderInvestments() {
       invBody.innerHTML = '';
-      if (!rows.length) {
+      if (!cachedInvestments.length) {
         invEmpty.style.display = 'block';
         totalPill.textContent = 'Total: —';
         return;
       }
       invEmpty.style.display = 'none';
-      let total = 0;
+      const rows =
+        currentFilter === 'all'
+          ? cachedInvestments
+          : cachedInvestments.filter((inv) => (inv.status || 'pending') === currentFilter);
+
+      const totalsByCurrency = {};
       rows.forEach((inv) => {
-        total += Number(inv.amount || 0);
+        const amt = Number(inv.amount || 0);
+        const cur = inv.currency || 'USD';
+        totalsByCurrency[cur] = (totalsByCurrency[cur] || 0) + amt;
+      });
+      const totalLabel = Object.keys(totalsByCurrency).length
+        ? Object.entries(totalsByCurrency)
+            .map(([cur, amt]) =>
+              `${Number(amt).toLocaleString(undefined, { maximumFractionDigits: 2 })} ${cur}`
+            )
+            .join(' · ')
+        : '—';
+      totalPill.textContent = 'Total: ' + totalLabel;
+
+      rows.forEach((inv) => {
         const tr = document.createElement('tr');
         const date = inv.created_at
-          ? new Date(inv.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+          ? new Date(inv.created_at).toLocaleDateString(undefined, {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+            })
           : '—';
+        const status = (inv.status || 'pending').toLowerCase();
         tr.innerHTML = `
           <td>${escapeHtml(date)}</td>
           <td>${Number(inv.amount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-          <td class="status">${escapeHtml(inv.status || 'pending')}</td>
+          <td class="status"><span class="badge ${escapeHtml(status)}">${escapeHtml(status)}</span></td>
           <td>${escapeHtml(inv.currency || '')}</td>
           <td>${escapeHtml(inv.note || '')}</td>
         `;
         invBody.appendChild(tr);
       });
-      totalPill.textContent = 'Total: ' + total.toLocaleString(undefined, { maximumFractionDigits: 2 });
     }
 
     invSubmit.addEventListener('click', async () => {
@@ -385,6 +554,21 @@
         invNote.value = '';
         setInvStatus('Commitment recorded. You or the team can update its status later.', false);
         await loadInvestments();
+        // Fire-and-forget notification email via Netlify + Resend
+        try {
+          await fetch('/.netlify/functions/notify-investment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: user.email,
+              amount,
+              currency: payload.currency,
+              note: payload.note,
+            }),
+          });
+        } catch (e) {
+          // Silent failure; portal UX should still succeed
+        }
       } catch (e) {
         setInvStatus(e.message || 'Could not save investment.', true);
       } finally {

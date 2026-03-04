@@ -1,0 +1,13 @@
+{
+  "name": "43-industries",
+  "private": true,
+  "description": "43 Industries — crypto-focused, investor-facing site",
+  "dependencies": {
+    "resend": "^4.0.0",
+    "@supabase/supabase-js": "^2.45.0",
+    "@netlify/blobs": "^10.7.0"
+  },
+  "devDependencies": {
+    "pg": "^8.11.0"
+  }
+}

@@ -92,3 +92,8 @@ After that, visitors can:
 - Sign up / sign in on `portal.html`.
 - See their own profile and a table of their recorded investments.
 - Add new “commitments” which you or your team can later update or reconcile on the Supabase side.
+
+When a new commitment is recorded, the portal also calls the Netlify function
+`/.netlify/functions/notify-investment`, which uses **Resend** and your
+existing `INVEST_INBOX_EMAIL` to send you an email summary of the amount,
+currency, and note for that investor.

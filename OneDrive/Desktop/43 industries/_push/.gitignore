@@ -1,15 +1,8 @@
 # Dependencies
 node_modules/
 
-# Env (never commit secrets)
-.env
-.env.local
-
 # Vercel
 .vercel
-
-# Netlify
-.netlify
 
 # OS
 .DS_Store

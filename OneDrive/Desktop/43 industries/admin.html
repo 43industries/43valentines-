@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leads — 43 Industries</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --black: #0a0a0a; --white: #f0ede6; --accent: #ff3c1f; --border: rgba(240,237,230,0.12); --green: #00ffa3; }
+    body { background: var(--black); color: var(--white); font-family: 'DM Sans', sans-serif; font-weight: 300; min-height: 100vh; padding: 2rem 4rem; }
+    h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.08em; margin-bottom: 2rem; }
+    h1 span { color: var(--accent); }
+    .auth-box { max-width: 360px; margin-bottom: 2rem; }
+    .auth-box input { width: 100%; background: transparent; border: 1px solid var(--border); padding: 0.75rem 1rem; color: var(--white); font-family: inherit; font-size: 0.9rem; margin-bottom: 0.75rem; }
+    .auth-box input::placeholder { color: rgba(240,237,230,0.4); }
+    .auth-box button { padding: 0.75rem 1.5rem; background: var(--accent); color: var(--black); border: none; font-family: inherit; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; }
+    .auth-box button:hover { opacity: 0.9; }
+    .error { color: var(--accent); font-size: 0.85rem; margin-top: 0.5rem; }
+    .leads-table { width: 100%; border-collapse: collapse; border: 1px solid var(--border); margin-top: 1rem; }
+    .leads-table th, .leads-table td { text-align: left; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    .leads-table th { font-weight: 500; letter-spacing: 0.05em; opacity: 0.7; }
+    .leads-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .leads-table .message { max-width: 280px; white-space: pre-wrap; word-break: break-word; opacity: 0.8; }
+    .leads-table .date { font-size: 0.8rem; opacity: 0.5; white-space: nowrap; }
+    .leads-table a { color: var(--green); text-decoration: none; }
+    .leads-table a:hover { text-decoration: underline; }
+    .empty { opacity: 0.5; padding: 3rem; text-align: center; }
+    .logout { display: inline-block; margin-top: 1rem; font-size: 0.75rem; opacity: 0.5; color: var(--white); cursor: pointer; }
+    .logout:hover { opacity: 0.8; }
+    @media (max-width: 900px) {
+      body { padding: 1.5rem 2rem; }
+      .leads-table th, .leads-table td { padding: 0.75rem; font-size: 0.8rem; }
+      .leads-table .message { max-width: 160px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>43<span>.</span> Industries — Leads</h1>
+
+  <div id="auth-section" class="auth-box">
+    <input type="password" id="admin-key" placeholder="Admin access key" autocomplete="off">
+    <button type="button" id="auth-btn">View leads</button>
+    <p id="auth-error" class="error" style="display:none"></p>
+  </div>
+
+  <div id="leads-section" style="display:none">
+    <p id="load-error" class="error" style="display:none"></p>
+    <table class="leads-table" id="leads-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Message</th>
+        </tr>
+      </thead>
+      <tbody id="leads-body"></tbody>
+    </table>
+    <p class="empty" id="empty-msg" style="display:none">No leads yet.</p>
+    <button type="button" class="logout" id="logout-btn">Log out</button>
+  </div>
+
+  <script>
+    const STORAGE_KEY = '43admin';
+    const authSection = document.getElementById('auth-section');
+    const leadsSection = document.getElementById('leads-section');
+    const adminKeyInput = document.getElementById('admin-key');
+    const authBtn = document.getElementById('auth-btn');
+    const authError = document.getElementById('auth-error');
+    const loadError = document.getElementById('load-error');
+    const leadsBody = document.getElementById('leads-body');
+    const emptyMsg = document.getElementById('empty-msg');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    function showAuthError(msg) {
+      authError.textContent = msg;
+      authError.style.display = 'block';
+    }
+    function hideAuthError() {
+      authError.style.display = 'none';
+    }
+
+    async function loadLeads(key) {
+      loadError.style.display = 'none';
+      try {
+        const res = await fetch('/.netlify/functions/get-leads', {
+          headers: { 'X-Admin-Key': key },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          loadError.textContent = data.error || 'Failed to load leads';
+          loadError.style.display = 'block';
+          return;
+        }
+        const leads = data.leads || [];
+        leadsBody.innerHTML = '';
+        if (leads.length === 0) {
+          emptyMsg.style.display = 'block';
+          return;
+        }
+        emptyMsg.style.display = 'none';
+        leads.forEach((lead) => {
+          const tr = document.createElement('tr');
+          const date = lead.created_at ? new Date(lead.created_at).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : '—';
+          tr.innerHTML = `
+            <td class="date">${escapeHtml(date)}</td>
+            <td>${escapeHtml(lead.name)}</td>
+            <td><a href="mailto:${escapeHtml(lead.email)}">${escapeHtml(lead.email)}</a></td>
+            <td>${escapeHtml(lead.role || '—')}</td>
+            <td class="message">${escapeHtml(lead.message || '—')}</td>
+          `;
+          leadsBody.appendChild(tr);
+        });
+      } catch (err) {
+        loadError.textContent = 'Network error.';
+        loadError.style.display = 'block';
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    authBtn.addEventListener('click', async () => {
+      const key = adminKeyInput.value.trim();
+      if (!key) {
+        showAuthError('Enter the access key.');
+        return;
+      }
+      hideAuthError();
+      const res = await fetch('/.netlify/functions/get-leads', { headers: { 'X-Admin-Key': key } });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showAuthError(data.error || 'Invalid key');
+        return;
+      }
+      sessionStorage.setItem(STORAGE_KEY, key);
+      authSection.style.display = 'none';
+      leadsSection.style.display = 'block';
+      adminKeyInput.value = '';
+      loadLeads(key);
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      sessionStorage.removeItem(STORAGE_KEY);
+      leadsSection.style.display = 'none';
+      authSection.style.display = 'block';
+    });
+
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      authSection.style.display = 'none';
+      leadsSection.style.display = 'block';
+      loadLeads(saved);
+    }
+  </script>
+</body>
+</html>
