@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>43 Industries</title>
+<title>43 Industries — Private Crypto Investment Fund</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
@@ -167,6 +167,61 @@
   .hero-cta span { position: relative; z-index: 1; }
   .hero-arrow { font-size: 1rem; position: relative; z-index: 1; }
 
+  /* BOTH STRUCTURES */
+  #structures {
+    padding: 4rem 4rem 5rem;
+    border-top: 1px solid var(--border);
+    background: var(--mid);
+  }
+  .structures-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.5rem;
+  }
+  .structures-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    max-width: 1000px;
+  }
+  .structure-card {
+    border: 1px solid var(--border);
+    padding: 2rem 2.25rem;
+    transition: background 0.25s, border-color 0.25s;
+  }
+  .structure-card:hover { background: rgba(255,60,31,0.03); border-color: rgba(255,60,31,0.25); }
+  .structure-card h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.35rem;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.75rem;
+    color: var(--white);
+  }
+  .structure-card .min-badge {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+  }
+  .structure-card p {
+    font-size: 0.88rem;
+    line-height: 1.65;
+    opacity: 0.65;
+  }
+  .structure-card a {
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    text-decoration: none;
+    margin-top: 1rem;
+    display: inline-block;
+  }
+  .structure-card a:hover { opacity: 0.9; }
+
   /* SECTION COMMON */
   section { padding: 8rem 4rem; }
   .section-label {
@@ -243,6 +298,40 @@
     opacity: 0.8;
     font-style: italic;
     padding-top: 2rem;
+  }
+  .fund-overview {
+    margin-top: 2.5rem;
+    padding: 1.5rem 1.75rem;
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    background: rgba(255,255,255,0.01);
+  }
+  .fund-overview-title {
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 0.75rem;
+  }
+  .fund-overview-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .fund-overview-list li {
+    margin-bottom: 0.5rem;
+    opacity: 0.75;
+  }
+  .fund-overview-list li:last-child { margin-bottom: 0; }
+  .fund-overview-label {
+    font-weight: 500;
+  }
+  .founder-note {
+    margin-top: 1.75rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    opacity: 0.7;
   }
   .about-deco {
     position: absolute;
@@ -330,6 +419,78 @@
     opacity: 0.6;
   }
 
+  /* STARTUPS */
+  #startups {
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6rem;
+    align-items: center;
+  }
+  .startups-left {}
+  .startups-tagline {
+    font-size: clamp(0.95rem, 1.5vw, 1.1rem);
+    line-height: 1.75;
+    opacity: 0.65;
+    margin-top: 2rem;
+  }
+  .startups-list {
+    margin-top: 2.5rem;
+    list-style: none;
+  }
+  .startups-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    opacity: 0.85;
+  }
+  .startups-list li:last-child { border-bottom: none; }
+  .startups-list .list-icon { color: var(--accent); flex-shrink: 0; font-size: 1rem; }
+  .startups-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 2rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    text-decoration: none;
+    border: 1px solid rgba(255,60,31,0.4);
+    padding: 0.9rem 1.5rem;
+    transition: background 0.25s, color 0.25s;
+  }
+  .startups-cta:hover { background: rgba(255,60,31,0.1); color: var(--white); }
+  .startups-right {
+    background: var(--mid);
+    border: 1px solid var(--border);
+    padding: 3rem;
+    position: relative;
+  }
+  .startups-right::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+  }
+  .startups-quote {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    opacity: 0.85;
+    font-style: italic;
+  }
+  .startups-note {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    opacity: 0.5;
+    margin-top: 2rem;
+  }
+
   /* CONTACT */
   #contact {
     border-top: 1px solid var(--border);
@@ -402,6 +563,25 @@
   .form-status { font-size: 0.85rem; margin-top: 0.5rem; min-height: 1.25rem; }
   .form-status.success { color: rgba(0,255,163,0.9); }
   .form-status.error { color: #ff6b6b; }
+  .lp-steps {
+    margin-top: 2rem;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    opacity: 0.75;
+  }
+  .lp-steps-title {
+    font-size: 0.75rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  .lp-steps ol {
+    margin: 0;
+    padding-left: 1.1rem;
+  }
+  .lp-steps li {
+    margin-bottom: 0.4rem;
+  }
 
   /* FOOTER */
   footer {
@@ -417,6 +597,13 @@
   }
   .footer-logo span { color: var(--accent); }
   .footer-copy { font-size: 0.7rem; opacity: 0.3; letter-spacing: 0.08em; }
+  .site-disclaimer {
+    font-size: 0.65rem;
+    opacity: 0.35;
+    letter-spacing: 0.06em;
+    max-width: 420px;
+    text-transform: uppercase;
+  }
 
   /* CRYPTO */
   #crypto {
@@ -604,9 +791,12 @@
     nav::after { left: 2rem; right: 2rem; }
     section { padding: 5rem 2rem; }
     #hero { padding: 0 2rem 5rem; }
+    #structures { padding: 3rem 2rem 4rem; }
+    .structures-grid { grid-template-columns: 1fr; }
     #about { grid-template-columns: 1fr; gap: 3rem; }
     .services-grid { grid-template-columns: 1fr; }
     .service-card { border-right: none; border-bottom: 1px solid var(--border); }
+    #startups { grid-template-columns: 1fr; gap: 3rem; }
     .contact-inner { grid-template-columns: 1fr; gap: 3rem; }
     footer { flex-direction: column; gap: 1rem; text-align: center; }
     .services-header { flex-direction: column; gap: 1rem; align-items: flex-start; }
@@ -625,10 +815,12 @@
 <nav>
   <a href="#hero" class="nav-logo">43<span>.</span>Industries</a>
   <ul class="nav-links">
-    <li><a href="#crypto">Crypto</a></li>
-    <li><a href="#about">About</a></li>
-    <li><a href="#services">Services</a></li>
-    <li><a href="#contact">Invest</a></li>
+    <li><a href="#structures">Structures</a></li>
+    <li><a href="#crypto">Strategy</a></li>
+    <li><a href="#about">About the Fund</a></li>
+    <li><a href="#services">Approach</a></li>
+    <li><a href="#startups">For Startups</a></li>
+    <li><a href="#contact">Become an LP</a></li>
     <li><a href="portal.html">Investor Portal</a></li>
   </ul>
 </nav>
@@ -639,17 +831,36 @@
   <div class="hero-grid"></div>
   <div class="hero-number">43</div>
   <div class="hero-content">
-    <div class="hero-tag">Technology, Finance, and Design — Aligned</div>
+    <div class="hero-tag">Private Crypto Investment Fund</div>
     <h1>We Are<br><em>43</em><br>Industries</h1>
-    <p class="hero-sub">We build and scale software, digital asset products, and infrastructure that connect next‑generation finance to real‑world use cases. We're raising and looking for the right partners.</p>
+    <p class="hero-sub">A private investment fund focused exclusively on digital assets. We deploy capital with discipline, research, and long‑term conviction for qualified investors and strategic partners. We also help startup businesses with websites, systems, and smart, cost-effective choices so they can grow steadily.</p>
     <a href="#crypto" class="hero-cta">
-      <span>See Our Market Pulse</span>
+      <span>Our Strategy &amp; Markets</span>
       <span class="hero-arrow">→</span>
     </a>
   </div>
 </section>
 
-<!-- CRYPTO (main focus) -->
+<!-- BOTH STRUCTURES -->
+<section id="structures">
+  <div class="structures-label fade-up">// Two structures</div>
+  <div class="structures-grid">
+    <div class="structure-card fade-up">
+      <div class="min-badge">Minimum investment $1,100</div>
+      <h3>1. Private Crypto Investment Fund</h3>
+      <p>For accredited and qualified investors. We allocate across digital assets with discipline, research, and risk management. Transparent reporting and investor portal.</p>
+      <a href="#contact">Become an LP →</a>
+    </div>
+    <div class="structure-card fade-up" style="transition-delay:0.08s">
+      <div class="min-badge">No minimum</div>
+      <h3>2. Startup Support</h3>
+      <p>Websites, systems, and smart cheaper choices for early-stage businesses. We help you get online and grow steadily without overspending.</p>
+      <a href="#startups">For Startups →</a>
+    </div>
+  </div>
+</section>
+
+<!-- STRATEGY & MARKETS -->
 <section id="crypto">
   <div class="crypto-ticker-bar">
     <div class="ticker-track" id="crypto-ticker-track">
@@ -670,34 +881,34 @@
   </div>
   <div class="crypto-layout">
     <div class="crypto-left">
-      <div class="section-label fade-up">// Market Pulse</div>
-      <h2 class="fade-up">Digital Assets.<br>Real‑Time Signal.</h2>
-      <p class="crypto-intro fade-up">43 Industries operates at the edge of digital asset markets and the software that powers them. We develop products, advise on strategy, and partner with teams that are shaping the next decade of finance and ownership.</p>
+      <div class="section-label fade-up">// Investment Strategy</div>
+      <h2 class="fade-up">Digital Assets.<br>Disciplined Capital.</h2>
+      <p class="crypto-intro fade-up">43 Industries is a private crypto investment fund. We allocate across core digital assets, infrastructure, and high‑conviction opportunities — with rigorous research, risk management, and a long‑term mandate.</p>
       <div class="crypto-offerings">
         <div class="crypto-offer fade-up">
           <span class="offer-icon">⚡</span>
           <div>
-            <div class="offer-title">Infrastructure &amp; Products</div>
-            <p class="offer-desc">We build and scale high‑performance software, tooling, and platforms that institutions and users rely on.</p>
+            <div class="offer-title">Core &amp; Large-Cap</div>
+            <p class="offer-desc">Strategic exposure to Bitcoin, Ethereum, and established protocols with proven network effects and institutional adoption.</p>
           </div>
         </div>
         <div class="crypto-offer fade-up" style="transition-delay:0.08s">
           <span class="offer-icon">◈</span>
           <div>
-            <div class="offer-title">Strategy &amp; Advisory</div>
-            <p class="offer-desc">Token design, go-to-market, and regulatory navigation for projects and portfolios.</p>
+            <div class="offer-title">Infrastructure &amp; Ecosystems</div>
+            <p class="offer-desc">Allocation to layer‑1s, DeFi, and infrastructure that we believe will define the next decade of digital finance.</p>
           </div>
         </div>
         <div class="crypto-offer fade-up" style="transition-delay:0.16s">
           <span class="offer-icon">✦</span>
           <div>
-            <div class="offer-title">Partnerships &amp; Capital</div>
-            <p class="offer-desc">We're raising. If you're an investor or strategic partner, we want to talk.</p>
+            <div class="offer-title">Fund Terms &amp; LPs</div>
+            <p class="offer-desc">Structured for qualified and accredited investors. Minimum investment $1,100. Transparent reporting, secure portal, and direct partnership with the team.</p>
           </div>
         </div>
       </div>
       <div class="crypto-cta-row fade-up">
-        <a href="#contact" class="btn-primary">For Investors →</a>
+        <a href="#contact" class="btn-primary">Become an LP →</a>
         <a href="mailto:mayieka43@icloud.com" class="btn-outline">mayieka43@icloud.com</a>
       </div>
     </div>
@@ -718,26 +929,36 @@
   </div>
 </section>
 
-<!-- ABOUT -->
+<!-- ABOUT THE FUND -->
 <section id="about">
   <div class="about-left fade-up">
-    <div class="section-label">// Who We Are</div>
-    <h2>Built Different.<br>By Design.</h2>
-    <p class="about-tagline">43 Industries exists at the intersection of technology, digital assets, and strategy. We don't just advise — we design, ship, and maintain products end‑to‑end.</p>
+    <div class="section-label">// About the Fund</div>
+    <h2>One Mandate.<br>Digital Assets.</h2>
+    <p class="about-tagline">43 Industries is a private investment fund dedicated to crypto and digital assets. Our mandate is clear: allocate capital with discipline, research, and conviction for the long term. We operate for qualified and accredited investors only.</p>
     <div class="about-stats">
-      <div>
-        <div class="stat-num">43+</div>
-        <div class="stat-label">Partners &amp; Clients</div>
-      </div>
       <div>
         <div class="stat-num">100%</div>
         <div class="stat-label">Crypto-Focused</div>
       </div>
+      <div>
+        <div class="stat-num">LP</div>
+        <div class="stat-label">Investor-First</div>
+      </div>
+    </div>
+    <div class="fund-overview">
+      <div class="fund-overview-title">Fund overview</div>
+      <ul class="fund-overview-list">
+        <li><span class="fund-overview-label">Strategy:</span> Diversified digital asset fund focused on core assets and infrastructure.</li>
+        <li><span class="fund-overview-label">Horizon:</span> Long-term, research-driven investing — not short-term trading.</li>
+        <li><span class="fund-overview-label">Minimum:</span> $1,100 for accredited and qualified investors.</li>
+        <li><span class="fund-overview-label">Reporting:</span> Regular updates and an investor portal so LPs always know where they stand.</li>
+      </ul>
+      <p class="founder-note">Founded and led by Mayieka, combining hands-on crypto experience with years of building and supporting real businesses and systems.</p>
     </div>
   </div>
   <div class="about-right fade-up" style="transition-delay:0.15s">
     <div class="about-card">
-      <p class="about-quote">We're raising and looking for investors who believe in the future of financial technology and digital assets — and want to back a team that ships.</p>
+      <p class="about-quote">We're building a fund for investors who believe in the future of digital assets and want a dedicated, disciplined partner — not a side strategy.</p>
       <div class="about-deco"></div>
     </div>
   </div>
@@ -788,33 +1009,63 @@
   </div>
 </section>
 
-<!-- CONTACT (Investors) -->
+<!-- FOR STARTUPS -->
+<section id="startups">
+  <div class="startups-left fade-up">
+    <div class="section-label">// For Startups</div>
+    <h2>Websites.<br>Systems.<br>Steady Growth.</h2>
+    <p class="startups-tagline">We help startup businesses get online and grow steadily without wasting money. Affordable websites and internal systems, built with smart choices so you can scale later when you're ready.</p>
+    <ul class="startups-list">
+      <li><span class="list-icon">◆</span> <strong>Websites &amp; systems</strong> — Professional sites and simple internal tools designed for early-stage, affordable budgets.</li>
+      <li><span class="list-icon">◆</span> <strong>Smart, cheaper choices</strong> — We choose hosting and tools that keep monthly costs low now, but can grow with you later.</li>
+      <li><span class="list-icon">◆</span> <strong>Steady growth</strong> — Set up so you can start small, then upgrade and add features only when the business is ready.</li>
+    </ul>
+    <a href="mailto:mayieka43@icloud.com?subject=Startup%20inquiry" class="startups-cta">Get in touch →</a>
+  </div>
+  <div class="startups-right fade-up" style="transition-delay:0.12s">
+    <p class="startups-quote">"We don't believe in bloated budgets. We help startups launch with the right tech at the right price — and grow from there."</p>
+    <p class="startups-note">Startup support is separate from our fund. Ideal for early-stage teams who need a clear path online.</p>
+  </div>
+</section>
+
+<!-- BECOME AN LP -->
 <section id="contact">
-  <div class="section-label">// For Investors</div>
-  <h2>We're Raising.<br>Let's Talk.</h2>
+  <div class="section-label">// For Accredited &amp; Qualified Investors</div>
+  <h2>Become an LP.<br>Let's Talk.</h2>
   <div class="contact-inner">
     <div>
-      <p class="contact-text">We're building the future of digital assets and infrastructure. If you're an investor or strategic partner interested in what we're doing, we'd like to hear from you.</p>
+      <p class="contact-text">43 Industries is raising for its private crypto fund. If you're an accredited or qualified investor interested in digital asset allocation, we'd like to hear from you. <strong>Minimum investment: $1,100.</strong> All inquiries are confidential.</p>
       <a href="mailto:mayieka43@icloud.com" class="contact-email">mayieka43@icloud.com</a>
       <p style="margin-top:1.5rem;font-size:0.8rem;letter-spacing:0.12em;text-transform:uppercase;opacity:0.7;">
-        Or view your details in the <a href="portal.html" style="color:#0a0a0a;text-decoration:underline;">Investor Portal</a>.
+        Existing LPs: use the <a href="portal.html" style="color:#0a0a0a;text-decoration:underline;">Investor Portal</a>.
       </p>
     </div>
     <form id="invest-form" class="contact-form" method="post" action="">
       <input type="text" name="name" id="invest-name" placeholder="Your Name" required>
       <input type="email" name="email" id="invest-email" placeholder="Your Email" required>
-      <input type="text" name="role" id="invest-role" placeholder="Investor / Partner">
-      <textarea name="message" id="invest-message" placeholder="Tell us about your interest..."></textarea>
+      <input type="text" name="role" id="invest-role" placeholder="Accredited / Qualified Investor">
+      <textarea name="message" id="invest-message" placeholder="Tell us about your interest (e.g. allocation size, experience)..."></textarea>
       <p id="form-status" class="form-status" aria-live="polite"></p>
-      <button type="submit" class="submit-btn" id="invest-submit">Get in Touch →</button>
+      <button type="submit" class="submit-btn" id="invest-submit">Request LP Information →</button>
     </form>
+    <div class="lp-steps">
+      <div class="lp-steps-title">What happens next</div>
+      <ol>
+        <li>We review your message and confirm fit for the fund.</li>
+        <li>We schedule a short call to walk through the strategy and answer questions.</li>
+        <li>If we both want to move forward, we share documents and next steps securely.</li>
+      </ol>
+    </div>
   </div>
 </section>
 
 <!-- FOOTER -->
 <footer>
   <div class="footer-logo">43<span>.</span>Industries</div>
-  <div class="footer-copy">© 2025 43 Industries. All rights reserved.</div>
+  <div>
+    <div class="footer-copy">© 2025 43 Industries. Private crypto investment fund. All rights reserved.</div>
+    <div class="site-disclaimer">For accredited and qualified investors only. Digital assets are volatile and you can lose capital. Nothing on this site is investment, tax, or legal advice.</div>
+  </div>
 </footer>
 
 <script>

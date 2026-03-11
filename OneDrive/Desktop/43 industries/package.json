@@ -1,7 +1,7 @@
 {
   "name": "43-industries",
   "private": true,
-  "description": "43 Industries — crypto-focused, investor-facing site",
+  "description": "43 Industries — private crypto investment fund",
   "dependencies": {
     "resend": "^4.0.0",
     "@supabase/supabase-js": "^2.45.0",

@@ -1,6 +1,6 @@
 # 43 Industries
 
-Static site for [43 Industries](https://43industries.com). Deploy with Netlify.
+**Private crypto investment fund.** Static site for [43 Industries](https://43industries.com). Deploy with Netlify.
 
 ## Push to GitHub
 
