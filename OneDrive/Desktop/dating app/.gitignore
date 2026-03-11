@@ -1,2 +1,4 @@
 node_modules/
 nexus.db
+.env
+public/uploads/

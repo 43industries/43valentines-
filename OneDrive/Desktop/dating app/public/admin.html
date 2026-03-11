@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Nexus</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .admin-page { max-width: 1000px; margin: 0 auto; padding: 6rem 2rem 4rem; position: relative; z-index: 1; }
+    .admin-header { margin-bottom: 2.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+    .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-size: 1.75rem; font-weight: 500; letter-spacing: 0.05em; }
+    .admin-header a { color: var(--accent); text-decoration: none; font-size: 0.85rem; letter-spacing: 0.05em; }
+    .admin-header a:hover { text-decoration: underline; }
+    .admin-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 2.5rem; }
+    .admin-stat { background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 1.25rem; }
+    .admin-stat .val { font-family: 'Cormorant Garamond', serif; font-size: 1.75rem; font-weight: 500; color: var(--cream); }
+    .admin-stat .label { font-size: 0.75rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 0.25rem; }
+    .admin-stat.blocked .val { color: #a55; }
+    .admin-users { border: 1px solid var(--border); }
+    .admin-users table { width: 100%; border-collapse: collapse; }
+    .admin-users th, .admin-users td { padding: 1rem 1.25rem; text-align: left; border-bottom: 1px solid var(--border-subtle); }
+    .admin-users th { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+    .admin-users tr:last-child td { border-bottom: none; }
+    .admin-users tr.blocked { opacity: 0.6; }
+    .admin-users tr.blocked .admin-username { color: var(--muted); }
+    .admin-avatar { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--surface); border: 1px solid var(--border); font-family: 'Cormorant Garamond', serif; font-size: 1rem; }
+    .admin-user-cell { display: flex; align-items: center; gap: 0.75rem; }
+    .admin-username { font-weight: 500; }
+    .admin-handle { font-size: 0.8rem; color: var(--muted); }
+    .admin-blocked-badge { font-size: 0.65rem; padding: 0.2rem 0.5rem; background: rgba(165,85,85,0.2); color: #a55; letter-spacing: 0.05em; }
+    .btn-block, .btn-unblock { padding: 0.35rem 0.75rem; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; border: 1px solid; font-family: inherit; transition: all 0.2s; }
+    .btn-block { background: transparent; border-color: #a55; color: #a55; }
+    .btn-block:hover { background: rgba(165,85,85,0.15); }
+    .btn-unblock { background: transparent; border-color: var(--muted); color: var(--muted); }
+    .btn-unblock:hover { border-color: var(--cream-dim); color: var(--cream-dim); }
+    .admin-denied, .admin-loading { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+    .admin-denied h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--cream); }
+  </style>
+</head>
+<body>
+  <div class="hypno-bg"></div>
+  <div class="grain"></div>
+
+  <nav class="nav">
+    <a href="/" class="logo">Nexus<span>.</span></a>
+    <div class="nav-right">
+      <a href="/" style="color:var(--muted);font-size:0.8rem;text-decoration:none">← Back to app</a>
+      <button class="btn-logout" id="logoutBtn">Log out</button>
+    </div>
+  </nav>
+
+  <main class="admin-page">
+    <div id="adminDenied" class="admin-denied" style="display:none">
+      <h2>Access denied</h2>
+      <p>You need admin privileges to view this page.</p>
+      <p style="margin-top:1rem"><a href="/">Return to Nexus</a></p>
+    </div>
+
+    <div id="adminContent" style="display:none">
+      <div class="admin-header">
+        <h1>Admin</h1>
+        <a href="/">← Back to app</a>
+      </div>
+
+      <div class="admin-stats" id="adminStats"></div>
+
+      <div class="admin-users">
+        <table>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="adminUsersBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="adminLoading" class="admin-loading">Checking access…</div>
+  </main>
+
+  <script>
+    const API = '/api';
+    const token = localStorage.getItem('nexus_token');
+
+    function authHeaders() {
+      const h = { 'Content-Type': 'application/json' };
+      if (token) h['Authorization'] = 'Bearer ' + token;
+      return h;
+    }
+
+    function initial(name) {
+      return (name || '?')[0].toUpperCase();
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('nexus_token');
+      location.href = '/';
+    });
+
+    async function init() {
+      const loading = document.getElementById('adminLoading');
+      const denied = document.getElementById('adminDenied');
+      const content = document.getElementById('adminContent');
+
+      if (!token) {
+        loading.style.display = 'none';
+        denied.style.display = 'block';
+        denied.querySelector('h2').textContent = 'Sign in required';
+        denied.querySelector('p').textContent = 'You must be signed in to access the admin area.';
+        return;
+      }
+
+      try {
+        const meRes = await fetch(`${API}/auth/me`, { headers: authHeaders() });
+        const meData = await meRes.json();
+        if (!meData.user || !meData.user.is_admin) {
+          loading.style.display = 'none';
+          denied.style.display = 'block';
+          return;
+        }
+      } catch (e) {
+        loading.style.display = 'none';
+        denied.style.display = 'block';
+        return;
+      }
+
+      loading.style.display = 'none';
+      content.style.display = 'block';
+
+      // Load stats
+      try {
+        const statsRes = await fetch(`${API}/admin/stats`, { headers: authHeaders() });
+        const stats = await statsRes.json();
+        if (stats.error) throw new Error(stats.error);
+        document.getElementById('adminStats').innerHTML = `
+          <div class="admin-stat"><span class="val">${stats.users}</span><span class="label">Total users</span></div>
+          <div class="admin-stat"><span class="val">${stats.active}</span><span class="label">Active</span></div>
+          <div class="admin-stat blocked"><span class="val">${stats.blocked}</span><span class="label">Blocked</span></div>
+          <div class="admin-stat"><span class="val">${stats.posts}</span><span class="label">Posts</span></div>
+          <div class="admin-stat"><span class="val">${stats.likes}</span><span class="label">Likes</span></div>
+          <div class="admin-stat"><span class="val">${stats.comments}</span><span class="label">Comments</span></div>
+          <div class="admin-stat"><span class="val">${stats.follows}</span><span class="label">Follows</span></div>
+          <div class="admin-stat"><span class="val">${stats.swipes}</span><span class="label">Swipes</span></div>
+        `;
+      } catch (e) {
+        document.getElementById('adminStats').innerHTML = '<p class="admin-loading">Could not load stats.</p>';
+      }
+
+      // Load users
+      try {
+        const usersRes = await fetch(`${API}/admin/users`, { headers: authHeaders() });
+        const users = await usersRes.json();
+        if (users.error) throw new Error(users.error);
+        const tbody = document.getElementById('adminUsersBody');
+        tbody.innerHTML = users.map(u => `
+          <tr class="${u.is_blocked ? 'blocked' : ''}" data-id="${u.id}">
+            <td>
+              <div class="admin-user-cell">
+                <span class="admin-avatar">${initial(u.name)}</span>
+                <div>
+                  <span class="admin-username">${(u.name || '').replace(/</g, '&lt;')}</span>
+                  <span class="admin-handle" style="display:block">@${(u.username || '').replace(/</g, '&lt;')}</span>
+                </div>
+              </div>
+            </td>
+            <td>${(u.email || '—').replace(/</g, '&lt;')}</td>
+            <td>${u.is_blocked ? '<span class="admin-blocked-badge">Blocked</span>' : '—'}</td>
+            <td>
+              ${u.is_blocked
+                ? `<button class="btn-unblock" data-id="${u.id}">Unblock</button>`
+                : `<button class="btn-block" data-id="${u.id}">Block</button>`
+              }
+            </td>
+          </tr>
+        `).join('');
+
+        tbody.querySelectorAll('.btn-block').forEach(btn => {
+          btn.addEventListener('click', () => blockUser(parseInt(btn.dataset.id)));
+        });
+        tbody.querySelectorAll('.btn-unblock').forEach(btn => {
+          btn.addEventListener('click', () => unblockUser(parseInt(btn.dataset.id)));
+        });
+      } catch (e) {
+        document.getElementById('adminUsersBody').innerHTML = '<tr><td colspan="4" class="admin-loading">Could not load users.</td></tr>';
+      }
+    }
+
+    async function blockUser(id) {
+      try {
+        const res = await fetch(`${API}/admin/users/${id}/block`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: '{}'
+        });
+        const data = await res.json();
+        if (data.error) alert(data.error);
+        else init();
+      } catch (e) {
+        alert('Failed to block user');
+      }
+    }
+
+    async function unblockUser(id) {
+      try {
+        const res = await fetch(`${API}/admin/users/${id}/unblock`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: '{}'
+        });
+        const data = await res.json();
+        if (data.error) alert(data.error);
+        else init();
+      } catch (e) {
+        alert('Failed to unblock user');
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

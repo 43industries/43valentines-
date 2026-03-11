@@ -6,7 +6,7 @@
   <title>Nexus — Where Souls Connect</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -16,48 +16,148 @@
   <nav class="nav">
     <a href="/" class="logo">Nexus<span>.</span></a>
     <div class="nav-right">
-      <span class="nav-tagline">where souls connect</span>
+      <span class="nav-tagline" id="navTagline">where souls connect</span>
+      <button class="btn-login" id="loginBtn" style="display:none">Sign in / Create account</button>
+      <div class="nav-user" id="navUser" style="display:none">
+        <a href="/admin.html" id="adminLink" class="admin-link" style="display:none">Admin</a>
+        <span class="nav-user-name" id="navUserName"></span>
+        <button class="btn-logout" id="logoutBtn">Log out</button>
+      </div>
     </div>
   </nav>
 
   <main class="feed-layout">
     <aside class="sidebar sidebar-left">
       <div class="current-user">
-        <span class="avatar">🌙</span>
+        <span class="avatar">L</span>
         <div>
           <span class="name">Luna</span>
           <span class="handle">@luna_midnight</span>
         </div>
       </div>
       <ul class="side-links">
-        <li><a href="#" class="active">Feed</a></li>
-        <li><a href="#">Explore</a></li>
-        <li><a href="#">Connections</a></li>
+        <li><a href="#" data-tab="discover" class="active">Discover</a></li>
+        <li><a href="#" data-tab="feed">Feed</a></li>
+        <li><a href="#" data-tab="matches">Matches</a></li>
       </ul>
+      <div class="matches-preview" id="matchesPreview">
+        <h4>Matches</h4>
+        <div id="matchesList" class="matches-list"></div>
+      </div>
     </aside>
 
     <section class="feed-main">
-      <div class="composer">
-        <div class="composer-avatar">🌙</div>
-        <div class="composer-body">
-          <textarea id="postInput" placeholder="What's on your mind?" rows="2"></textarea>
-          <button id="postBtn" class="btn-post">Share</button>
+      <!-- Discover (Tinder swipe) -->
+      <div id="discoverView" class="view active">
+        <div id="discoverGuestCTA" class="guest-cta" style="display:none">
+          <p class="guest-cta-text">Create your account to discover people and share your moments.</p>
+          <button type="button" class="btn-post" id="guestSignupBtn">Create account</button>
         </div>
+        <div class="discover-header">
+          <h2>Discover</h2>
+          <p>Connect with those who intrigue you. Swipe to explore, follow to stay close.</p>
+        </div>
+        <div class="swipe-stack" id="swipeStack">
+          <div id="swipeCards"></div>
+        </div>
+        <div class="swipe-actions" id="swipeActions">
+          <button class="swipe-btn pass" id="passBtn" aria-label="Pass">✕</button>
+          <button class="swipe-btn follow" id="followBtn" aria-label="Follow">+</button>
+          <button class="swipe-btn like" id="likeBtn" aria-label="Like">♥</button>
+        </div>
+        <p id="discoverEmpty" class="empty-state" style="display:none">You've seen everyone for now. Return soon for new connections.</p>
       </div>
 
-      <div id="feed" class="posts"></div>
-      <p id="emptyState" class="empty-state">Loading your feed...</p>
+      <!-- Feed -->
+      <div id="feedView" class="view">
+        <div class="feed-tabs">
+          <button class="feed-tab active" data-mode="for-you">For You</button>
+          <button class="feed-tab" data-mode="following">Following</button>
+        </div>
+        <div class="composer">
+          <div class="composer-avatar">L</div>
+          <div class="composer-body">
+            <textarea id="postInput" placeholder="Share something..." rows="2"></textarea>
+            <div class="composer-media" id="composerMedia"></div>
+            <div class="composer-actions">
+              <label class="composer-add-media" aria-label="Add photo or video">
+                <input type="file" id="postMediaInput" accept="image/*,video/*" multiple hidden>
+                <span>Photo / Video</span>
+              </label>
+              <button type="button" id="postBtn" class="btn-post">Share</button>
+            </div>
+          </div>
+        </div>
+        <div id="feed" class="posts"></div>
+        <p id="emptyState" class="empty-state">Loading your feed...</p>
+      </div>
+
+      <!-- Matches -->
+      <div id="matchesView" class="view">
+        <h2>Matches</h2>
+        <p class="subtitle">Mutual interest. The beginning of something.</p>
+        <div id="matchesGrid" class="matches-grid"></div>
+        <p id="matchesEmpty" class="empty-state" style="display:none">No matches yet. Swipe right when someone catches your eye.</p>
+      </div>
     </section>
 
     <aside class="sidebar sidebar-right">
       <div class="card">
-        <h3>Explore</h3>
-        <p>Find people who resonate with your vibe.</p>
+        <h3>About</h3>
+        <p><strong>Discover</strong> — Swipe right to express interest, left to pass. Follow those you wish to see more of.</p>
+        <p><strong>Feed</strong> — For You surfaces what resonates. Following shows only those you've chosen.</p>
       </div>
     </aside>
   </main>
 
-  <!-- Comment modal -->
+  <!-- Auth modal -->
+  <div id="authModal" class="modal">
+    <div class="modal-backdrop auth-backdrop"></div>
+    <div class="modal-content auth-content">
+      <button class="modal-close auth-close" aria-label="Close">&times;</button>
+      <h2 class="auth-title">Join Nexus</h2>
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-method="email-phone">Email or Phone</button>
+        <button class="auth-tab" data-method="google">Google</button>
+      </div>
+      <div id="authForms">
+        <form id="authUnifiedForm" class="auth-form">
+          <input type="text" id="authIdentifier" name="identifier" placeholder="Email or phone number" required autocomplete="email">
+          <div id="authExtraFields" style="display:none">
+            <input type="password" name="password" placeholder="Password (min 6 characters)" minlength="6" autocomplete="new-password">
+            <input type="text" name="name" placeholder="Display name (optional)" autocomplete="name">
+          </div>
+          <button type="submit" class="btn-auth" id="authSubmitBtn">Continue</button>
+          <p class="auth-switch">Already have an account? <a href="#" id="showLogin">Log in</a></p>
+        </form>
+        <form id="authLoginForm" class="auth-form" style="display:none">
+          <input type="text" name="identifier" placeholder="Email or phone number" required autocomplete="username">
+          <input type="password" name="password" placeholder="Password" required autocomplete="current-password">
+          <button type="submit" class="btn-auth">Log in</button>
+          <p class="auth-switch">New here? <a href="#" id="showSignup">Sign up</a> · <a href="#" id="showForgot">Forgot password?</a></p>
+        </form>
+        <form id="authForgotForm" class="auth-form" style="display:none">
+          <input type="email" name="email" placeholder="Email" required>
+          <button type="submit" class="btn-auth">Send reset link</button>
+          <p id="forgotResult" class="auth-result"></p>
+          <p class="auth-switch"><a href="#" id="backToLogin">Back to login</a></p>
+        </form>
+        <form id="authResetForm" class="auth-form" style="display:none">
+          <input type="password" name="password" placeholder="New password" minlength="6" required>
+          <input type="password" name="passwordConfirm" placeholder="Confirm password" minlength="6" required>
+          <button type="submit" class="btn-auth">Set new password</button>
+        </form>
+        <div id="authGoogleBtn" class="auth-form" style="display:none">
+          <button type="button" class="btn-google" id="googleSignInBtn">
+            <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/><path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z"/><path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.49a4.77 4.77 0 0 1 4.48-3.3z"/></svg>
+            Sign in with Google
+          </button>
+        </div>
+      </div>
+      <p id="authError" class="auth-error"></p>
+    </div>
+  </div>
+
   <div id="commentModal" class="modal">
     <div class="modal-backdrop"></div>
     <div class="modal-content">
