@@ -444,7 +444,6 @@ nav {
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
   crossorigin="">
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.0/dist/umd/supabase.min.js" defer></script>
 </head>
 <body>
 
@@ -525,28 +524,28 @@ nav {
     <div class="hcard">
       <div class="hcard-icon">🧒</div>
       <div>
-        <div class="hcard-val">16</div>
+        <div class="hcard-val" id="v-students-aboard">—</div>
         <div class="hcard-label">Students Aboard</div>
       </div>
     </div>
     <div class="hcard">
       <div class="hcard-icon">📍</div>
       <div>
-        <div class="hcard-val" id="v-eta">4 min</div>
+        <div class="hcard-val" id="v-eta">—</div>
         <div class="hcard-label">Next Stop ETA</div>
       </div>
     </div>
     <div class="hcard">
       <div class="hcard-icon">✅</div>
       <div>
-        <div class="hcard-val">8</div>
+        <div class="hcard-val" id="v-dropped">—</div>
         <div class="hcard-label">Safely Dropped</div>
       </div>
     </div>
     <div class="hcard">
       <div class="hcard-icon">⚠️</div>
       <div>
-        <div class="hcard-val">1</div>
+        <div class="hcard-val" id="v-absent">—</div>
         <div class="hcard-label">Absent Today</div>
       </div>
     </div>
@@ -564,7 +563,7 @@ nav {
           <span style="font-size:1.3rem">🗺️</span>
           <span class="card-title">Live Bus Location</span>
           <span class="card-badge live-tag">● LIVE</span>
-          <span style="margin-left:8px;font-size:0.78rem;color:var(--text-soft);font-weight:700" id="speed-lbl">38 km/h</span>
+          <span style="margin-left:8px;font-size:0.78rem;color:var(--text-soft);font-weight:700" id="speed-lbl">—</span>
         </div>
         <div class="map-wrap">
           <!-- Decorative SVG map remains for branding -->
@@ -694,7 +693,7 @@ nav {
 
           <div style="position:absolute;bottom:14px;right:14px;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 4px 16px rgba(0,0,0,0.12);display:flex;align-items:center;gap:8px;font-size:0.82rem;font-weight:700;color:var(--navy)">
             <div style="width:10px;height:10px;border-radius:50%;background:var(--grass-green)" id="live-dot"></div>
-            <span id="live-status-label">Bus 07 · Connecting…</span> · <span id="map-speed">38 km/h</span>
+            <span id="live-status-label">Bus 07 · Connecting…</span> · <span id="map-speed">—</span>
           </div>
         </div>
       </div>
@@ -703,93 +702,11 @@ nav {
       <div class="card">
         <div class="card-header">
           <span style="font-size:1.3rem">📍</span>
-          <span class="card-title">Route A — 6 Stops Today</span>
+          <span class="card-title" id="route-card-title">Route</span>
           <span style="margin-left:auto;font-size:0.78rem;font-weight:700;background:var(--green-light);color:var(--grass-dark);border-radius:20px;padding:3px 10px;">✅ On Schedule</span>
         </div>
-        <div class="route-timeline">
-
-          <div class="rt-item">
-            <div class="rt-dot rt-done">✓</div>
-            <div class="rt-line"></div>
-            <div class="rt-content">
-              <div class="rt-name">Maple Street Junction</div>
-              <div class="rt-sub">Stop 1 · 6 students</div>
-              <div class="rt-chips">
-                <span class="chip chip-on">🟢 Amara K.</span>
-                <span class="chip chip-on">🟢 James L.</span>
-                <span class="chip chip-on">🟢 Fatuma A.</span>
-                <span class="chip chip-off">🔴 David M. — Absent</span>
-              </div>
-            </div>
-            <div class="rt-time done-t">6:45 AM</div>
-          </div>
-
-          <div class="rt-item">
-            <div class="rt-dot rt-done">✓</div>
-            <div class="rt-line"></div>
-            <div class="rt-content">
-              <div class="rt-name">Riverside Primary Flats</div>
-              <div class="rt-sub">Stop 2 · 5 students</div>
-              <div class="rt-chips">
-                <span class="chip chip-on">🟢 Lena W.</span>
-                <span class="chip chip-on">🟢 Kevin O.</span>
-                <span class="chip chip-on">🟢 Priya S.</span>
-              </div>
-            </div>
-            <div class="rt-time done-t">7:00 AM</div>
-          </div>
-
-          <div class="rt-item">
-            <div class="rt-dot rt-done">✓</div>
-            <div class="rt-line"></div>
-            <div class="rt-content">
-              <div class="rt-name">Garden Estate Gate B</div>
-              <div class="rt-sub">Stop 3 · 4 students</div>
-              <div class="rt-chips">
-                <span class="chip chip-on">🟢 Brian N.</span>
-                <span class="chip chip-on">🟢 Chloe R.</span>
-              </div>
-            </div>
-            <div class="rt-time done-t">7:15 AM</div>
-          </div>
-
-          <div class="rt-item">
-            <div class="rt-dot rt-current">🚌</div>
-            <div class="rt-line"></div>
-            <div class="rt-content">
-              <div class="rt-name">
-                Westlands Shopping Mall
-                <span style="font-size:0.68rem;background:var(--bus-yellow);color:var(--navy);border-radius:8px;padding:2px 7px;margin-left:5px;font-weight:800;">NOW</span>
-              </div>
-              <div class="rt-sub" style="color:var(--coral);font-weight:700">🔴 Bus arriving — ETA 4 minutes</div>
-              <div class="rt-chips">
-                <span class="chip chip-wait">⏳ Mercy J.</span>
-                <span class="chip chip-wait">⏳ Tom B.</span>
-                <span class="chip chip-wait">⏳ Aisha M.</span>
-              </div>
-            </div>
-            <div class="rt-time eta">~7:28 AM</div>
-          </div>
-
-          <div class="rt-item">
-            <div class="rt-dot rt-upcoming">5</div>
-            <div class="rt-line"></div>
-            <div class="rt-content">
-              <div class="rt-name" style="color:var(--text-soft)">Kileleshwa Estate</div>
-              <div class="rt-sub">Stop 5 · 4 students · Upcoming</div>
-            </div>
-            <div class="rt-time">7:38 AM</div>
-          </div>
-
-          <div class="rt-item">
-            <div class="rt-dot rt-school">🏫</div>
-            <div class="rt-content">
-              <div class="rt-name" style="color:var(--text-soft)">Nairobi Academy — School Gate</div>
-              <div class="rt-sub">Final destination</div>
-            </div>
-            <div class="rt-time">7:52 AM</div>
-          </div>
-
+        <div class="route-timeline" id="route-timeline">
+          <div style="padding:16px 22px;color:var(--text-soft);font-weight:600;">Loading route…</div>
         </div>
       </div>
     </div>
@@ -802,7 +719,7 @@ nav {
         <div class="card-header">
           <span style="font-size:1.3rem">🧒</span>
           <span class="card-title">Students — Bus 07</span>
-          <span class="card-badge" style="background:var(--green-light);color:var(--grass-dark)">32 total</span>
+          <span class="card-badge" style="background:var(--green-light);color:var(--grass-dark)" id="student-total">—</span>
         </div>
         <div class="search-box">
           <span>🔍</span>
@@ -833,11 +750,11 @@ nav {
         <div class="driver-panel">
           <div class="driver-big">
             <div class="driver-top">
-              <div class="driver-av">JM</div>
+              <div class="driver-av" id="driver-display-initials">—</div>
               <div>
-                <div class="driver-name">James Mwangi</div>
-                <div style="font-size:0.75rem;color:rgba(255,255,255,0.55);margin-top:2px">Senior Driver · 8 yrs</div>
-                <div class="driver-plate">KCA 482T · Bus 07</div>
+                <div class="driver-name" id="driver-display-name">—</div>
+                <div id="driver-sub-line" style="font-size:0.75rem;color:rgba(255,255,255,0.55);margin-top:2px">—</div>
+                <div class="driver-plate" id="driver-plate-line">—</div>
               </div>
               <button class="call-btn-big" onclick="toast('Calling driver...')" aria-label="Call driver">📞</button>
             </div>
@@ -866,322 +783,6 @@ nav {
 
 <div class="toast-wrap" id="toast-wrap" aria-live="polite"></div>
 
-<script>
-const SUPABASE_URL = 'https://shsgyoeuponjemicmyvd.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_VndNb4MsmH2pVY4Y2oiLHw_DJgUct-Y';
-const BUS_ID = 'bus_07';
-
-let supabaseClient = null;
-let leafletMap = null;
-let busMarker = null;
-let activeBusId = BUS_ID;
-let busChannel = null;
-let currentLeg = 'to_pickup'; // 'to_pickup' | 'to_school'
-
-// Simplified parent / student profiles for the front-end demo.
-// In production, this would be looked up securely from the backend.
-const PARENT_STUDENTS = [
-  {
-    admission: 'ADM1001',
-    studentName: 'Mercy Jebet',
-    parentName: 'Mrs. Jebet',
-    busId: BUS_ID,
-    stopName: 'Westlands Shopping Mall',
-  },
-  {
-    admission: 'ADM1002',
-    studentName: 'Tom Barasa',
-    parentName: 'Mr. Barasa',
-    busId: BUS_ID,
-    stopName: 'Westlands Shopping Mall',
-  },
-];
-
-let currentStudent = null;
-
-function initSupabase() {
-  if (!window.supabase || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.warn('Supabase is not configured yet.');
-    return null;
-  }
-  if (supabaseClient) return supabaseClient;
-  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  return supabaseClient;
-}
-
-function initRealtimeMap() {
-  const el = document.getElementById('realtime-map');
-  if (!el || leafletMap) return;
-  leafletMap = L.map(el, {
-    zoomControl: false,
-  }).setView([-1.286389, 36.817223], 14); // Default: Nairobi CBD
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap',
-  }).addTo(leafletMap);
-}
-
-function updateBusPosition(lat, lng, speedKmh, recordedAt) {
-  if (!leafletMap) initRealtimeMap();
-  if (!leafletMap) return;
-
-  const pos = [lat, lng];
-  if (!busMarker) {
-    busMarker = L.marker(pos, {
-      title: activeBusId,
-    }).addTo(leafletMap);
-  } else {
-    busMarker.setLatLng(pos);
-  }
-  leafletMap.panTo(pos, { animate: true });
-
-  const speedLbl = document.getElementById('speed-lbl');
-  const mapSpeed = document.getElementById('map-speed');
-  const liveDot = document.getElementById('live-dot');
-  const liveLabel = document.getElementById('live-status-label');
-
-  if (speedLbl && typeof speedKmh === 'number') speedLbl.textContent = `${speedKmh} km/h`;
-  if (mapSpeed && typeof speedKmh === 'number') mapSpeed.textContent = `${speedKmh} km/h`;
-  if (liveDot) liveDot.style.background = '#66BB6A';
-  if (liveLabel && recordedAt) {
-    const busLabel = activeBusId === BUS_ID ? 'Bus 07' : activeBusId;
-    liveLabel.textContent = `${busLabel} · Live · ${new Date(
-      recordedAt,
-    ).toLocaleTimeString()}`;
-  }
-}
-
-async function bootstrapBusTracking(busId) {
-  const client = initSupabase();
-  if (!client) return;
-
-  activeBusId = busId || BUS_ID;
-
-  try {
-    const { data, error } = await client
-      .from('bus_state')
-      .select('*')
-      .eq('bus_id', activeBusId)
-      .maybeSingle();
-    if (!error && data && data.lat && data.lng) {
-      updateBusPosition(data.lat, data.lng, data.speed_kmh, data.recorded_at);
-    }
-  } catch (e) {
-    console.warn('Failed to load initial bus_state', e);
-  }
-
-  if (busChannel) {
-    client.removeChannel(busChannel);
-  }
-
-  busChannel = client
-    .channel(`bus_state_changes_${activeBusId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'bus_state',
-        filter: `bus_id=eq.${activeBusId}`,
-      },
-      (payload) => {
-        const row = payload.new || payload.old;
-        if (!row || !row.lat || !row.lng) return;
-        updateBusPosition(row.lat, row.lng, row.speed_kmh, row.recorded_at);
-      },
-    )
-    .subscribe();
-}
-
-window.addEventListener('load', () => {
-  initRealtimeMap();
-  bootstrapBusTracking(BUS_ID);
-});
-
-function updateParentBanner(statusText) {
-  const banner = document.getElementById('parent-banner');
-  const statusEl = document.getElementById('banner-status');
-  if (!banner || !statusEl) return;
-  if (statusText) statusEl.textContent = statusText;
-}
-
-function syncParentEtaFromCard() {
-  if (!currentStudent) return;
-  const etaCard = document.getElementById('v-eta');
-  const nextWrap = document.getElementById('parent-next');
-  const stopEl = document.getElementById('parent-next-stop');
-  const etaEl = document.getElementById('parent-next-eta');
-  const legEl = document.getElementById('parent-next-leg');
-  if (!etaCard || !nextWrap || !stopEl || !etaEl || !legEl) return;
-
-  const eta = etaCard.textContent || '—';
-  etaEl.textContent = eta;
-  stopEl.textContent = currentStudent.stopName;
-  legEl.textContent =
-    currentLeg === 'to_pickup'
-      ? 'to home pick‑up'
-      : 'to school drop‑off';
-  nextWrap.style.display = 'flex';
-}
-
-function handleParentLogin(event) {
-  event.preventDefault();
-  const input = document.getElementById('admission-input');
-  const errorEl = document.getElementById('login-error');
-  if (!input) return;
-  const raw = input.value.trim();
-  const admission = raw.toUpperCase();
-  const profile = PARENT_STUDENTS.find(
-    (p) => p.admission.toUpperCase() === admission,
-  );
-  if (!profile) {
-    if (errorEl) {
-      errorEl.textContent =
-        'We could not find that admission number. Please check and try again.';
-    }
-    return;
-  }
-  currentStudent = profile;
-  if (errorEl) errorEl.textContent = '';
-
-  const banner = document.getElementById('parent-banner');
-  const loginOverlay = document.getElementById('parent-login');
-  const nameSpan = document.getElementById('banner-student-name');
-  const busSpan = document.getElementById('banner-bus-label');
-  const navStatus = document.getElementById('nav-status-text');
-
-  const busLabel = profile.busId === BUS_ID ? 'Bus 07' : profile.busId;
-  if (nameSpan) nameSpan.textContent = profile.studentName;
-  if (busSpan) busSpan.textContent = busLabel;
-  if (banner) banner.style.display = 'flex';
-  if (loginOverlay) loginOverlay.classList.add('hidden');
-  if (navStatus) {
-    navStatus.textContent = `Tracking ${profile.studentName} · ${profile.stopName} · Morning run (${busLabel})`;
-  }
-  currentLeg = 'to_pickup';
-  updateParentBanner('Bus will leave school, then head to your home stop for pick‑up.');
-  syncParentEtaFromCard();
-  bootstrapBusTracking(profile.busId);
-  toast(`Signed in. Tracking ${profile.studentName} on ${busLabel}.`);
-}
-
-function skipLogin() {
-  const loginOverlay = document.getElementById('parent-login');
-  if (loginOverlay) loginOverlay.classList.add('hidden');
-}
-
-const students = [
-  {n:"Amara Kimani",    g:"Grade 4", st:"on",   col:"#3B9EF5", i:"AK"},
-  {n:"James Lungaho",   g:"Grade 3", st:"on",   col:"#8B5CF6", i:"JL"},
-  {n:"Fatuma Ahmed",    g:"Grade 5", st:"on",   col:"#EC4899", i:"FA"},
-  {n:"David Mwenda",    g:"Grade 4", st:"abs",  col:"#94A3B8", i:"DM"},
-  {n:"Lena Wanjiku",    g:"Grade 2", st:"on",   col:"#F97316", i:"LW"},
-  {n:"Kevin Otieno",    g:"Grade 6", st:"on",   col:"#22C55E", i:"KO"},
-  {n:"Priya Sharma",    g:"Grade 3", st:"on",   col:"#EF4444", i:"PS"},
-  {n:"Brian Njoroge",   g:"Grade 5", st:"on",   col:"#0EA5E9", i:"BN"},
-  {n:"Chloe Ruto",      g:"Grade 4", st:"on",   col:"#A855F7", i:"CR"},
-  {n:"Mercy Jebet",     g:"Grade 2", st:"wait", col:"#14B8A6", i:"MJ"},
-  {n:"Tom Barasa",      g:"Grade 3", st:"wait", col:"#F59E0B", i:"TB"},
-  {n:"Aisha Mohamed",   g:"Grade 5", st:"wait", col:"#6366F1", i:"AM"},
-  {n:"Noah Kibet",      g:"Grade 6", st:"drop", col:"#10B981", i:"NK"},
-  {n:"Sara Chege",      g:"Grade 4", st:"on",   col:"#F43F5E", i:"SC"},
-  {n:"Ali Hassan",      g:"Grade 3", st:"on",   col:"#8B5CF6", i:"AH"},
-  {n:"Grace Muthoni",   g:"Grade 2", st:"wait", col:"#06B6D4", i:"GM"},
-];
-const stLabel = {on:"Aboard 🟢", wait:"Waiting ⏳", abs:"Absent ❌", drop:"Dropped ✅"};
-const stClass = {on:"sb-on", wait:"sb-wait", abs:"sb-abs", drop:"sb-drop"};
-function renderStudents(list) {
-  const wrap = document.getElementById('student-list');
-  if (!list.length) {
-    wrap.innerHTML = '<div class="student-row" style="justify-content:center;color:var(--text-soft);font-weight:600;">No students match your search.</div>';
-    return;
-  }
-  wrap.innerHTML = list.map(s=>`
-    <div class="student-row">
-      <div class="s-avatar" style="background:${s.col}">${s.i}</div>
-      <div><div class="s-name">${s.n}</div><div class="s-class">${s.g}</div></div>
-      <div class="s-badge ${stClass[s.st]}">${stLabel[s.st]}</div>
-    </div>`).join('');
-}
-function filterStudents(q){renderStudents(students.filter(s=>s.n.toLowerCase().includes(q.toLowerCase())));}
-renderStudents(students);
-
-let notifs = [
-  {c:"n-green", i:"✅", m:"Amara Kimani safely boarded at Maple Street.", t:"6:45 AM"},
-  {c:"n-red",   i:"⚠️", m:"David Mwenda is marked absent today.", t:"6:46 AM"},
-  {c:"n-green", i:"✅", m:"Lena Wanjiku boarded at Riverside Flats.", t:"7:00 AM"},
-  {c:"n-blue",  i:"📍", m:"Bus 07 approaching Westlands — ETA 4 min.", t:"7:24 AM"},
-  {c:"n-green", i:"🚌", m:"Bus 07 departed Garden Estate on schedule.", t:"7:16 AM"},
-];
-const extras = [
-  {c:"n-green", i:"✅", m:"Mercy Jebet has safely boarded at Westlands! 🎉", t:"Just now"},
-  {c:"n-blue",  i:"📍", m:"Bus 07 arrived at Westlands Mall stop.", t:"Just now"},
-  {c:"n-green", i:"✅", m:"Tom Barasa boarded the bus.", t:"Just now"},
-  {c:"n-orange",i:"⏱️", m:"Bus 07 is 2 min behind — ETA updated.", t:"Just now"},
-];
-let eIdx=0;
-function renderNotifs(){
-  document.getElementById('notif-list').innerHTML=notifs.slice(0,6).map(n=>`
-    <div class="notif-row ${n.c}">
-      <div class="notif-icon">${n.i}</div>
-      <div><div class="notif-msg">${n.m}</div><div class="notif-ts">${n.t}</div></div>
-    </div>`).join('');
-}
-renderNotifs();
-function fireNotif(){
-  if(eIdx<extras.length){
-    const extra = extras[eIdx++];
-    notifs.unshift(extra);
-    renderNotifs();
-    // If this alert is about the currently tracked student, update parent status/leg.
-    if (currentStudent && extra.m.includes(currentStudent.studentName)) {
-      if (extra.m.includes('safely boarded')) {
-        currentLeg = 'to_school';
-        updateParentBanner('Your child is on the bus, heading to school.');
-        syncParentEtaFromCard();
-      }
-    }
-  }
-  const el=document.getElementById('notif-count');
-  el.textContent=parseInt(el.textContent||0)+1;
-}
-setInterval(()=>{
-  const sp=Math.floor(30+Math.random()*16);
-  document.getElementById('speed-lbl').textContent=sp+' km/h';
-  document.getElementById('map-speed').textContent=sp+' km/h';
-  document.getElementById('v-eta').textContent=Math.floor(3+Math.random()*5)+' min';
-  syncParentEtaFromCard();
-},3500);
-const roleStatus = {
-  parent: 'Bus 07 is LIVE · Route A · Morning Run',
-  teacher: 'Bus 07 · Route A · Class overview',
-  admin: 'All buses · Dashboard · 43industries'
-};
-function setRole(el, role) {
-  document.querySelectorAll('.role-tab').forEach(t => {
-    t.className = 'role-tab';
-    t.setAttribute('aria-pressed', 'false');
-  });
-  el.className = 'role-tab active-' + role;
-  el.setAttribute('aria-pressed', 'true');
-  const statusEl = document.getElementById('nav-status-text');
-  if (statusEl) statusEl.textContent = roleStatus[role] || roleStatus.parent;
-}
-
-function toast(msg) {
-  const wrap = document.getElementById('toast-wrap');
-  const el = document.createElement('div');
-  el.className = 'toast';
-  el.textContent = msg;
-  wrap.appendChild(el);
-  setTimeout(() => el.remove(), 2500);
-}
-function confirmEmergency() {
-  if (confirm('Report emergency for Bus 07? School and parents will be notified.')) {
-    toast('Emergency reported. Help is on the way.');
-  }
-}
-</script>
+<script type="module" src="/src/dashboard.js"></script>
 </body>
 </html>

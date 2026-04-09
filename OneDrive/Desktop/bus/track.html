@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BusBuddy — Live Map</title>
+  <meta name="description" content="Full-screen live map showing your child's school bus in real time." />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <style>
+    :root {
+      --bus-yellow: #FFD93D;
+      --navy: #1A237E;
+      --bg: #0F172A;
+      --card: rgba(15,23,42,0.9);
+      --text: #E5E7EB;
+      --accent: #38BDF8;
+      --danger: #F97316;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body {
+      font-family:'Quicksand',sans-serif;
+      background: radial-gradient(circle at top,#1D4ED8 0,#020617 50%,#000 100%);
+      color:var(--text);
+      min-height:100vh;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+    .top-bar {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:10px 16px;
+      background:linear-gradient(135deg,#FBBF24,#F97316);
+      color:#111827;
+      box-shadow:0 3px 14px rgba(0,0,0,0.35);
+      z-index:10;
+    }
+    .tb-left {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-family:'Baloo 2',cursive;
+      font-weight:800;
+      font-size:1.3rem;
+    }
+    .tb-left span { font-size:1.7rem; }
+    .tb-left em { color:#1D4ED8; font-style:normal; }
+    .tb-right {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:0.85rem;
+      font-weight:700;
+    }
+    .pill {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:4px 10px;
+      border-radius:999px;
+      background:rgba(15,23,42,0.06);
+      border:1px solid rgba(15,23,42,0.1);
+    }
+    .live-dot {
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:#EF4444;
+      box-shadow:0 0 0 6px rgba(248,113,113,0.45);
+      animation:pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { transform:scale(1); opacity:1; }
+      50% { transform:scale(1.5); opacity:0.4; }
+    }
+    .back-btn {
+      border:none;
+      border-radius:999px;
+      padding:5px 11px;
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      font-size:0.8rem;
+      font-weight:700;
+      cursor:pointer;
+      background:rgba(15,23,42,0.08);
+    }
+    .back-btn a {
+      color:inherit;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+    }
+    .back-btn:hover { background:rgba(15,23,42,0.16); }
+
+    .layout {
+      flex:1;
+      display:grid;
+      grid-template-columns: minmax(0,1.9fr) minmax(0,1fr);
+      gap:14px;
+      padding:12px 12px 16px;
+    }
+    #map {
+      width:100%;
+      height:100%;
+      border-radius:18px;
+      overflow:hidden;
+      box-shadow:0 14px 40px rgba(0,0,0,0.55);
+    }
+    .side {
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .card {
+      background:var(--card);
+      border-radius:18px;
+      padding:14px 14px 12px;
+      box-shadow:0 10px 30px rgba(0,0,0,0.6);
+      border:1px solid rgba(148,163,184,0.25);
+    }
+    .card h2 {
+      font-family:'Baloo 2',cursive;
+      font-size:1.05rem;
+      margin-bottom:6px;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .status-row {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      font-size:0.9rem;
+    }
+    .status-badge {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:3px 9px;
+      border-radius:999px;
+      background:rgba(16,185,129,0.18);
+      color:#6EE7B7;
+      font-size:0.8rem;
+      font-weight:700;
+    }
+    .status-badge span {
+      width:7px;
+      height:7px;
+      border-radius:999px;
+      background:#22C55E;
+    }
+    .meta-row {
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      margin-top:6px;
+      font-size:0.8rem;
+    }
+    .chip {
+      padding:3px 8px;
+      border-radius:999px;
+      background:rgba(15,23,42,0.8);
+      border:1px solid rgba(148,163,184,0.6);
+    }
+    .metrics {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:8px;
+    }
+    .metric {
+      flex:1 1 80px;
+      background:radial-gradient(circle at top,var(--accent),transparent 70%);
+      border-radius:14px;
+      padding:8px 10px;
+      font-size:0.78rem;
+      border:1px solid rgba(56,189,248,0.5);
+    }
+    .metric span {
+      display:block;
+      font-size:0.8rem;
+      opacity:0.75;
+      margin-bottom:2px;
+    }
+    .metric strong {
+      font-family:'Baloo 2',cursive;
+      font-size:1.1rem;
+    }
+    .driver-row {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-top:6px;
+    }
+    .driver-av {
+      width:40px;
+      height:40px;
+      border-radius:999px;
+      background:var(--bus-yellow);
+      color:var(--navy);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-family:'Baloo 2',cursive;
+      font-weight:800;
+    }
+    .cta-row {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:10px;
+    }
+    .btn-primary,
+    .btn-ghost {
+      border-radius:999px;
+      padding:7px 12px;
+      border:none;
+      cursor:pointer;
+      font-size:0.82rem;
+      font-weight:700;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .btn-primary {
+      background:var(--bus-yellow);
+      color:#111827;
+    }
+    .btn-ghost {
+      background:rgba(15,23,42,0.7);
+      color:var(--text);
+      border:1px solid rgba(148,163,184,0.6);
+    }
+    .btn-primary:hover { filter:brightness(1.05); }
+    .btn-ghost:hover { background:rgba(15,23,42,0.9); }
+
+    .footer {
+      padding:6px 14px 10px;
+      font-size:0.75rem;
+      color:#9CA3AF;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      background:linear-gradient(to right,rgba(15,23,42,0.9),rgba(15,23,42,0.6));
+      border-top:1px solid rgba(148,163,184,0.3);
+    }
+    .footer strong { color:#E5E7EB; }
+
+    .toast-wrap {
+      position:fixed;
+      bottom:18px;
+      left:50%;
+      transform:translateX(-50%);
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      pointer-events:none;
+      z-index:40;
+    }
+    .toast {
+      background:#0F172A;
+      color:#F9FAFB;
+      padding:8px 14px;
+      border-radius:999px;
+      border:1px solid rgba(56,189,248,0.7);
+      font-size:0.8rem;
+      font-weight:700;
+      box-shadow:0 12px 30px rgba(0,0,0,0.7);
+      animation:toast-in 0.25s ease-out;
+    }
+    @keyframes toast-in {
+      from { opacity:0; transform:translate(-50%,10px); }
+      to { opacity:1; transform:translate(-50%,0); }
+    }
+
+    @media (max-width:900px) {
+      .layout {
+        grid-template-columns: minmax(0,1fr);
+        grid-template-rows: minmax(0,1.5fr) auto;
+      }
+      body { overflow:auto; }
+      #map { height:320px; }
+    }
+    @media (max-width:600px) {
+      .top-bar { flex-direction:column; align-items:flex-start; gap:6px; }
+      .layout { padding:8px 8px 12px; }
+      .footer { flex-direction:column; align-items:flex-start; }
+    }
+  </style>
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin="">
+  </script>
+</head>
+<body>
+  <header class="top-bar">
+    <div class="tb-left">
+      <span>🚌</span>
+      Bus<em>Buddy</em>
+    </div>
+    <div class="tb-right">
+      <div class="pill">
+        <div class="live-dot" id="live-dot-main"></div>
+        <span id="status-text-main">Connecting to Bus 07…</span>
+      </div>
+      <button class="back-btn">
+        <a href="index.html">
+          ← Back to dashboard
+        </a>
+      </button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <div id="map"></div>
+
+    <aside class="side">
+      <section class="card">
+        <h2 id="track-bus-title">Bus 07 · Nairobi Academy</h2>
+        <div class="status-row">
+          <div class="status-badge" id="status-pill">
+            <span></span>
+            <div id="status-label">Waiting for first update</div>
+          </div>
+          <div style="font-size:0.78rem;text-align:right;">
+            <div>Last update:</div>
+            <div id="last-updated" style="opacity:0.75;">—</div>
+          </div>
+        </div>
+        <div class="meta-row">
+          <div class="chip" id="chip-speed">Speed: —</div>
+          <div class="chip" id="chip-eta">ETA: approx —</div>
+          <div class="chip" id="track-route-chip">Route A · Morning Run</div>
+        </div>
+        <div class="metrics">
+          <div class="metric">
+            <span>Current speed</span>
+            <strong id="metric-speed">—</strong>
+          </div>
+          <div class="metric">
+            <span>Distance to school</span>
+            <strong id="metric-distance">—</strong>
+          </div>
+          <div class="metric">
+            <span>On‑time score</span>
+            <strong>98%</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Driver & contact</h2>
+        <div class="driver-row">
+          <div class="driver-av" id="track-driver-initials">JM</div>
+          <div>
+            <div id="track-driver-name" style="font-family:'Baloo 2',cursive;font-size:0.95rem;">James Mwangi</div>
+            <div id="track-driver-sub" style="font-size:0.78rem;opacity:0.7;">KCA 482T · Bus 07 · Senior driver</div>
+          </div>
+        </div>
+        <div class="cta-row">
+          <button class="btn-primary" onclick="callDriver()">
+            📞 Call driver
+          </button>
+          <button class="btn-ghost" onclick="toast('Opening WhatsApp group…')">
+            💬 WhatsApp updates
+          </button>
+        </div>
+        <p style="margin-top:8px;font-size:0.78rem;opacity:0.75;line-height:1.4;">
+          Location is shared for safety during active school runs only. Parents see approximate position, not exact address.
+        </p>
+      </section>
+    </aside>
+  </main>
+
+  <div class="toast-wrap" id="toast-wrap" aria-live="polite"></div>
+
+  <footer class="footer">
+    <div>
+      <strong>BusBuddy Live Map</strong> · Built for safe, transparent school transport.
+    </div>
+    <div>
+      Data provided by driver device · Powered by Supabase & Vercel.
+    </div>
+  </footer>
+
+  <script type="module" src="/src/track-app.js"></script>
+</body>
+</html>
+

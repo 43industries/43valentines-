@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BusBuddy — Driver Location</title>
+  <meta name="description" content="Simple driver page to share live bus location with BusBuddy." />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #020617;
+      --card: #0f172a;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56,189,248,0.15);
+      --danger: #f97316;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --success: #22c55e;
+      --border: rgba(148,163,184,0.4);
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body {
+      min-height:100vh;
+      background:radial-gradient(circle at top,#1e293b,#020617);
+      color:var(--text);
+      font-family:'Quicksand',sans-serif;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+    }
+    .card {
+      width:100%;
+      max-width:480px;
+      background:var(--card);
+      border-radius:22px;
+      padding:20px 18px 16px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.7);
+      border:1px solid var(--border);
+    }
+    h1 {
+      font-family:'Baloo 2',cursive;
+      font-size:1.4rem;
+      margin-bottom:4px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    h1 span {
+      background:var(--accent-soft);
+      border-radius:999px;
+      padding:4px 8px;
+      font-size:0.8rem;
+      font-weight:700;
+      color:var(--accent);
+    }
+    p.sub {
+      font-size:0.85rem;
+      color:var(--muted);
+      margin-bottom:10px;
+    }
+    label {
+      font-size:0.78rem;
+      font-weight:700;
+      display:block;
+      margin-bottom:3px;
+      color:var(--muted);
+    }
+    input {
+      width:100%;
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:#020617;
+      color:var(--text);
+      font-family:'Quicksand',sans-serif;
+      font-size:0.9rem;
+      margin-bottom:8px;
+    }
+    input::placeholder { color:#6b7280; }
+    .row {
+      display:flex;
+      gap:8px;
+      margin-top:8px;
+    }
+    button {
+      border:none;
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:0.85rem;
+      font-weight:700;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      font-family:'Quicksand',sans-serif;
+    }
+    .btn-primary {
+      background:var(--accent);
+      color:#020617;
+      flex:1;
+    }
+    .btn-secondary {
+      background:rgba(15,23,42,0.9);
+      color:var(--text);
+      border:1px solid var(--border);
+      flex:1;
+    }
+    .btn-primary[disabled],
+    .btn-secondary[disabled] {
+      opacity:0.5;
+      cursor:not-allowed;
+    }
+    .status {
+      margin-top:10px;
+      font-size:0.8rem;
+      padding:8px 10px;
+      border-radius:12px;
+      background:rgba(15,23,42,0.8);
+      border:1px dashed rgba(148,163,184,0.5);
+    }
+    .status strong { color:var(--accent); }
+    .status-line {
+      margin-top:4px;
+      color:var(--muted);
+      line-height:1.4;
+    }
+    .badge {
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      font-size:0.75rem;
+      border-radius:999px;
+      padding:2px 8px;
+      background:rgba(15,23,42,0.9);
+      border:1px solid rgba(148,163,184,0.4);
+      margin-top:6px;
+    }
+    .dot {
+      width:7px;
+      height:7px;
+      border-radius:999px;
+      background:var(--danger);
+    }
+    .dot.live {
+      background:var(--success);
+      box-shadow:0 0 0 6px rgba(34,197,94,0.3);
+      animation:pulse 1.4s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { transform:scale(1); opacity:1; }
+      50% { transform:scale(1.4); opacity:0.5; }
+    }
+    .footer {
+      margin-top:10px;
+      font-size:0.75rem;
+      color:var(--muted);
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+    }
+    a.link {
+      color:var(--accent);
+      text-decoration:none;
+      font-weight:600;
+    }
+    a.link:hover { text-decoration:underline; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Driver · Live Sharing <span>Bus 07</span></h1>
+    <p class="sub">
+      Log in, then tap <strong>Start sharing</strong> at the beginning of the route.
+      This will send your GPS position to BusBuddy for parents to see.
+    </p>
+
+    <div id="auth-block">
+      <label for="email">Email</label>
+      <input id="email" type="email" placeholder="driver@example.com" />
+
+      <label for="password">Password</label>
+      <input id="password" type="password" placeholder="••••••••" />
+
+      <div class="row">
+        <button class="btn-primary" id="login-btn">Log in</button>
+        <button class="btn-secondary" id="logout-btn" disabled>Log out</button>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:12px;">
+      <button class="btn-primary" id="start-btn" disabled>▶ Start sharing</button>
+      <button class="btn-secondary" id="stop-btn" disabled>⏸ Stop</button>
+    </div>
+
+    <div class="status" id="status-box">
+      <div><strong>Status:</strong> Not logged in</div>
+      <div class="status-line" id="status-line">Please log in with your driver account.</div>
+      <div class="badge">
+        <span class="dot" id="live-dot"></span>
+        <span id="live-label">OFF · Not sharing</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>BusBuddy Driver · v0.1</span>
+      <a href="track.html" class="link">View parent map →</a>
+    </div>
+  </div>
+
+  <script type="module" src="/src/driver-app.js"></script>
+</body>
+</html>
+
