@@ -1,4 +1,5 @@
 import { getSupabase, isSupabaseConfigured } from './supabase.js';
+import { resolveTenantContext } from './session.js';
 
 const BUS_ID = import.meta.env.VITE_DEFAULT_BUS_ID || 'bus_07';
 
@@ -6,12 +7,17 @@ let supabaseClient = null;
 let map = null;
 let marker = null;
 let driverPhone = '+254700000000';
+let schoolId = null;
+let activeBusId = BUS_ID;
 
 function initSupabase() {
   if (!isSupabaseConfigured()) return null;
-  if (supabaseClient) return supabaseClient;
-  supabaseClient = getSupabase();
+  if (!supabaseClient) supabaseClient = getSupabase();
   return supabaseClient;
+}
+
+function busLabel() {
+  return activeBusId === 'bus_07' ? 'Bus 07' : activeBusId;
 }
 
 function toast(msg) {
@@ -59,37 +65,39 @@ function applyBusMeta(meta) {
   const nameEl = document.getElementById('track-driver-name');
   const subEl = document.getElementById('track-driver-sub');
   if (title) {
-    title.textContent = `${BUS_ID === 'bus_07' ? 'Bus 07' : BUS_ID} · ${meta.school_name || 'School'}`;
+    title.textContent = `${busLabel()} · ${meta.school_name || 'School'}`;
   }
   if (routeChip) routeChip.textContent = meta.route_label || 'Route';
   if (initials) initials.textContent = meta.driver_initials || '—';
   if (nameEl) nameEl.textContent = meta.driver_name || '—';
   if (subEl) {
-    const busLabel = BUS_ID === 'bus_07' ? 'Bus 07' : BUS_ID;
-    subEl.textContent = [meta.plate, busLabel, 'Senior driver'].filter(Boolean).join(' · ');
+    subEl.textContent = [meta.plate, busLabel(), 'Senior driver'].filter(Boolean).join(' · ');
   }
   if (meta.phone_e164) driverPhone = meta.phone_e164;
 }
 
 async function loadBusMeta() {
   const client = initSupabase();
-  if (!client) return;
+  if (!client || !schoolId) return;
   const { data } = await client
     .from('bus_meta')
     .select('*')
-    .eq('bus_id', BUS_ID)
+    .eq('school_id', schoolId)
+    .eq('bus_id', activeBusId)
     .maybeSingle();
   applyBusMeta(data);
 }
 
 function updateUIFromState(row) {
   if (!row || row.lat == null || row.lng == null) return;
+  if (row.school_id && schoolId && row.school_id !== schoolId) return;
+  if (row.bus_id && row.bus_id !== activeBusId) return;
   initMap();
   if (!map) return;
 
   const pos = [row.lat, row.lng];
   if (!marker) {
-    marker = L.marker(pos, { title: BUS_ID }).addTo(map);
+    marker = L.marker(pos, { title: activeBusId }).addTo(map);
   } else {
     marker.setLatLng(pos);
   }
@@ -116,7 +124,7 @@ function updateUIFromState(row) {
     const diffMin = Math.round((now - recordedAt) / 60000);
     const freshness = diffMin <= 2 ? 'Live' : `Updated ${diffMin} min ago`;
     if (statusTextMain) {
-      statusTextMain.textContent = `${BUS_ID === 'bus_07' ? 'Bus 07' : BUS_ID} · ${freshness}`;
+      statusTextMain.textContent = `${busLabel()} · ${freshness}`;
     }
     if (lastUpdated) lastUpdated.textContent = recordedAt.toLocaleTimeString();
   }
@@ -157,13 +165,35 @@ async function bootstrap() {
     return;
   }
 
+  const {
+    data: { session },
+  } = await client.auth.getSession();
+  if (!session) {
+    toast('Sign in from the dashboard first, then open the live map.');
+    return;
+  }
+
+  const ctx = await resolveTenantContext(client);
+  if (!ctx) {
+    toast('This account has no school access.');
+    return;
+  }
+
+  schoolId = ctx.schoolId;
+  if (ctx.mode === 'parent' && ctx.parentProfile?.students) {
+    activeBusId = ctx.parentProfile.students.bus_id;
+  } else {
+    activeBusId = BUS_ID;
+  }
+
   await loadBusMeta();
 
   try {
     const { data, error } = await client
       .from('bus_state')
       .select('*')
-      .eq('bus_id', BUS_ID)
+      .eq('school_id', schoolId)
+      .eq('bus_id', activeBusId)
       .maybeSingle();
     if (!error && data) updateUIFromState(data);
   } catch (e) {
@@ -172,14 +202,14 @@ async function bootstrap() {
   }
 
   client
-    .channel('bus_state_live_map')
+    .channel(`track_bus_state_${schoolId}_${activeBusId}`)
     .on(
       'postgres_changes',
       {
         event: '*',
         schema: 'public',
         table: 'bus_state',
-        filter: `bus_id=eq.${BUS_ID}`,
+        filter: `school_id=eq.${schoolId}`,
       },
       (payload) => {
         const row = payload.new || payload.old;

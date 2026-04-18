@@ -91,6 +91,7 @@ nav {
   background: var(--navy); color: var(--bus-yellow); border-radius: 30px;
   padding: 6px 14px; font-weight: 700; font-size: 0.82rem;
   display: flex; align-items: center; gap: 6px; cursor: pointer;
+  border: none; font-family: inherit;
 }
 
 /* ROLE TABS */
@@ -254,6 +255,24 @@ nav {
   color: var(--text-soft);
   box-shadow: 0 4px 14px rgba(0,0,0,0.05);
 }
+.parent-quick-actions {
+  max-width: 1400px; margin: 0 auto 14px; padding: 0 24px;
+  display: none; flex-wrap: wrap; align-items: center; gap: 10px;
+}
+.parent-quick-actions .pqa-label {
+  font-size: 0.82rem; font-weight: 700; color: var(--text-soft); margin-right: 4px;
+}
+.parent-quick-actions button {
+  border-radius: 999px; padding: 8px 16px; font-weight: 700; font-size: 0.82rem; cursor: pointer;
+  border: 2px solid var(--border); background: white; font-family: 'Quicksand', sans-serif;
+}
+.parent-quick-actions button.primary-abs {
+  background: #FFEBEE; border-color: #E57373; color: #C62828;
+}
+.parent-quick-actions button.primary-clear {
+  background: #E8F5E9; border-color: #81C784; color: #2E7D32;
+}
+
 .parent-next span.pill {
   font-size: 0.72rem;
   text-transform: uppercase;
@@ -430,6 +449,37 @@ nav {
 @media (max-width:1000px) { .main-grid{grid-template-columns:1fr;} .hero-cards{grid-template-columns:repeat(2,1fr);} }
 @media (max-width:600px) { .hero-cards{grid-template-columns:1fr 1fr;} nav{padding:0 16px;} .nav-center{display:none;} .page{padding:0 12px 32px;} }
 
+/* Platform views (Parent / Teacher / Admin) */
+.platform-strip { max-width: 1400px; margin: 0 auto 14px; padding: 0 24px; }
+.platform-hdr {
+  display: none; align-items: center; gap: 12px; padding: 12px 18px; border-radius: var(--r-sm);
+  font-weight: 700; font-size: 0.9rem; color: var(--navy); box-shadow: var(--shadow-card);
+}
+body[data-platform="parent"] .platform-hdr.parent-hdr { display: flex; background: linear-gradient(135deg, #E3F2FD, #BBDEFB); border: 2px solid #4FC3F7; }
+body[data-platform="teacher"] .platform-hdr.teacher-hdr { display: flex; background: linear-gradient(135deg, #E8F5E9, #C8E6C9); border: 2px solid #66BB6A; }
+body[data-platform="admin"] .platform-hdr.admin-hdr { display: flex; background: linear-gradient(135deg, #F3E5F5, #E1BEE7); border: 2px solid #AB47BC; }
+.platform-hdr em { font-style: normal; opacity: 0.85; font-weight: 600; font-size: 0.82rem; }
+.admin-console {
+  margin: 0 auto 18px; max-width: 1400px; padding: 0 24px;
+}
+.admin-console .card-inner { padding: 16px 20px; }
+.admin-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+.admin-metric {
+  background: var(--bg); border-radius: var(--r-sm); padding: 12px 14px; border: 2px dashed var(--border);
+  font-size: 0.82rem; font-weight: 700; color: var(--navy);
+}
+.admin-metric strong { display: block; font-family: 'Baloo 2', cursive; font-size: 1.35rem; margin-top: 4px; }
+.admin-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.admin-actions button {
+  border-radius: 999px; padding: 8px 14px; font-weight: 700; font-size: 0.82rem; cursor: pointer;
+  border: 2px solid var(--border); background: white; font-family: 'Quicksand', sans-serif;
+}
+.admin-actions button.primary { background: #AB47BC; color: white; border-color: #7B1FA2; }
+#attendance-modal.hidden { display: none; }
+#attendance-modal { z-index: 260; }
+.attendance-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--border); }
+.attendance-row select { border-radius: 10px; padding: 6px 10px; font-weight: 600; border: 2px solid var(--border); }
+
 /* Toast */
 .toast-wrap { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:300; display:flex; flex-direction:column; gap:8px; pointer-events:none; }
 .toast { background:var(--navy); color:var(--bus-yellow); padding:12px 20px; border-radius:var(--r-sm); font-weight:700; font-size:0.88rem; box-shadow:0 6px 24px rgba(0,0,0,0.2); animation:toast-in 0.3s ease; }
@@ -463,39 +513,85 @@ nav {
     </a>
     <button class="nav-icon-btn" onclick="fireNotif()" aria-label="Notifications" style="flex-shrink:0;">
       🔔
-      <span class="notif-badge" id="notif-count">3</span>
+      <span class="notif-badge" id="notif-count">0</span>
     </button>
-    <div class="user-pill">👤 Mrs. Njeri ▾</div>
+    <button type="button" class="user-pill" id="user-pill" onclick="signOut()" title="Sign out">Sign in</button>
   </div>
 </nav>
 
 <div class="role-bar">
-  <button class="role-tab active-parent" onclick="setRole(this,'parent')" aria-pressed="true">👪 Parent View</button>
-  <button class="role-tab" onclick="setRole(this,'teacher')" aria-pressed="false">👩‍🏫 Teacher View</button>
-  <button class="role-tab" onclick="setRole(this,'admin')" aria-pressed="false">🏫 Admin View</button>
+  <button type="button" class="role-tab active-parent" data-platform="parent" onclick="setRole(this,'parent')" aria-pressed="true">👪 Parent platform</button>
+  <button type="button" class="role-tab" data-staff-only data-platform="teacher" onclick="setRole(this,'teacher')" aria-pressed="false">👩‍🏫 Teacher platform</button>
+  <button type="button" class="role-tab" data-staff-only data-platform="admin" onclick="setRole(this,'admin')" aria-pressed="false">🏫 Admin platform</button>
+</div>
+
+<div class="platform-strip">
+  <div class="platform-hdr parent-hdr" id="platform-hdr-parent">
+    <span>👪</span>
+    <div><strong>Parent platform</strong> — Live bus, route, and alerts for your child’s run. <em>Use Live Map for full-screen tracking.</em></div>
+  </div>
+  <div class="platform-hdr teacher-hdr" id="platform-hdr-teacher">
+    <span>👩‍🏫</span>
+    <div><strong>Teacher platform</strong> — Class roster on this bus, attendance, and operational alerts. <em>Open Attendance to update statuses in Supabase.</em></div>
+  </div>
+  <div class="platform-hdr admin-hdr" id="platform-hdr-admin">
+    <span>🏫</span>
+    <div><strong>Admin platform</strong> — Fleet snapshot, compliance actions, and broadcast-style alerts for your school tenant.</div>
+  </div>
+</div>
+
+<div class="admin-console" id="admin-console" style="display:none;">
+  <div class="card card-inner">
+    <div class="card-header" style="border-bottom:none;padding-bottom:0;">
+      <span style="font-size:1.2rem">⚙️</span>
+      <span class="card-title">School admin console</span>
+    </div>
+    <p style="font-size:0.84rem;color:var(--text-soft);font-weight:600;margin-top:6px;">
+      Scoped to your signed-in school (<span id="admin-school-name">—</span>). Invite users and manage roles in Supabase → Authentication &amp; SQL <code style="font-size:0.75rem;">school_members</code>.
+    </p>
+    <div class="admin-metrics">
+      <div class="admin-metric">Buses with meta <strong id="admin-bus-count">—</strong></div>
+      <div class="admin-metric">Students (this school) <strong id="admin-student-count">—</strong></div>
+      <div class="admin-metric">Active route bus <strong id="admin-active-bus">—</strong></div>
+    </div>
+    <div class="admin-actions">
+      <button type="button" class="primary" onclick="openSupabaseDashboardHint()">Open Supabase project</button>
+      <button type="button" onclick="window.open('driver.html','_blank')">Driver sharing page</button>
+      <button type="button" onclick="window.open('track.html','_blank')">Live map (new tab)</button>
+    </div>
+  </div>
 </div>
 
 <!-- Parent login overlay -->
 <div class="login-overlay" id="parent-login">
-  <form class="login-card" onsubmit="handleParentLogin(event)">
-    <div class="login-title">Sign in to track your child</div>
+  <form class="login-card" onsubmit="handleSessionLogin(event)">
+    <div class="login-title">Sign in to BusBuddy</div>
     <p class="login-sub">
-      Enter your child's admission number to see their bus, live location, and pick‑up / drop‑off alerts.
+      Use the email and password your school gave you. Parents and staff each have their own account; data is scoped to your school.
     </p>
     <div class="login-field">
-      <label class="login-label" for="admission-input">Admission number</label>
+      <label class="login-label" for="login-email">Email</label>
       <input
-        id="admission-input"
+        id="login-email"
         class="login-input"
-        type="text"
-        autocomplete="off"
-        placeholder="e.g. 4A-023 or ADM1023"
+        type="email"
+        autocomplete="username"
+        placeholder="you@school.edu"
+        required
+      />
+    </div>
+    <div class="login-field">
+      <label class="login-label" for="login-password">Password</label>
+      <input
+        id="login-password"
+        class="login-input"
+        type="password"
+        autocomplete="current-password"
         required
       />
     </div>
     <div class="login-actions">
-      <button type="submit" class="login-primary-btn">Continue as parent</button>
-      <button type="button" class="login-skip" onclick="skipLogin()">Skip for demo</button>
+      <button type="submit" class="login-primary-btn">Sign in</button>
     </div>
     <div class="login-error" id="login-error" role="alert" aria-live="polite"></div>
   </form>
@@ -517,6 +613,12 @@ nav {
     <span>· ETA</span>
     <strong id="parent-next-eta">4 min</strong>
     <span id="parent-next-leg">to home pick‑up</span>
+  </div>
+
+  <div class="parent-quick-actions" id="parent-quick-actions" aria-label="Parent actions">
+    <span class="pqa-label">Your child</span>
+    <button type="button" class="primary-abs" onclick="parentReportAbsence()">Report absence today</button>
+    <button type="button" class="primary-clear" onclick="parentMarkWaiting()">Mark waiting (clear absence)</button>
   </div>
 
   <!-- HERO STAT CARDS -->
@@ -718,7 +820,7 @@ nav {
       <div class="card">
         <div class="card-header">
           <span style="font-size:1.3rem">🧒</span>
-          <span class="card-title">Students — Bus 07</span>
+          <span class="card-title" id="student-card-title">Students — bus roster</span>
           <span class="card-badge" style="background:var(--green-light);color:var(--grass-dark)" id="student-total">—</span>
         </div>
         <div class="search-box">
@@ -737,7 +839,7 @@ nav {
         </div>
         <div class="notif-list" id="notif-list"></div>
         <div class="notif-actions">
-          <button class="btn-full" onclick="fireNotif()">🔔 Simulate Arrival Alert</button>
+          <button type="button" class="btn-full" data-staff-only onclick="fireNotif()">🔔 Simulate Arrival Alert</button>
         </div>
       </div>
 
@@ -756,7 +858,7 @@ nav {
                 <div id="driver-sub-line" style="font-size:0.75rem;color:rgba(255,255,255,0.55);margin-top:2px">—</div>
                 <div class="driver-plate" id="driver-plate-line">—</div>
               </div>
-              <button class="call-btn-big" onclick="toast('Calling driver...')" aria-label="Call driver">📞</button>
+              <button class="call-btn-big" onclick="callDriverFromMeta()" aria-label="Call driver">📞</button>
             </div>
             <div class="driver-grid">
               <div class="d-mini"><div class="d-mini-val">98%</div><div class="d-mini-lbl">On-Time</div></div>
@@ -765,9 +867,9 @@ nav {
             </div>
           </div>
           <div class="qa-grid">
-            <button class="qa-btn" onclick="toast('Opening attendance...')"><span class="qa-icon">📋</span>Attendance</button>
-            <button class="qa-btn" onclick="toast('SMS parents option coming soon')"><span class="qa-icon">📱</span>SMS Parents</button>
-            <button class="qa-btn" onclick="toast('Full route map opening...')"><span class="qa-icon">🗺️</span>Full Route</button>
+            <button class="qa-btn" onclick="openAttendanceModal()"><span class="qa-icon">📋</span>Attendance</button>
+            <button class="qa-btn" onclick="openSmsToParents()"><span class="qa-icon">📱</span>SMS Parents</button>
+            <button class="qa-btn" onclick="window.open('track.html','_blank')"><span class="qa-icon">🗺️</span>Full Route</button>
             <button class="qa-btn" onclick="confirmEmergency()"><span class="qa-icon">🚨</span>Emergency</button>
           </div>
         </div>
@@ -782,6 +884,17 @@ nav {
 </div>
 
 <div class="toast-wrap" id="toast-wrap" aria-live="polite"></div>
+
+<div id="attendance-modal" class="login-overlay hidden" aria-modal="true" role="dialog">
+  <div class="login-card" style="max-width: 520px;">
+    <div class="login-title">Attendance — this bus</div>
+    <p class="login-sub">Set each student’s transport status. Saves to your school database (staff &amp; teachers).</p>
+    <div id="attendance-modal-body" style="max-height: 320px; overflow-y: auto; margin-top: 10px;"></div>
+    <div class="login-actions" style="margin-top: 16px;">
+      <button type="button" class="login-primary-btn" onclick="closeAttendanceModal()">Done</button>
+    </div>
+  </div>
+</div>
 
 <script type="module" src="/src/dashboard.js"></script>
 </body>

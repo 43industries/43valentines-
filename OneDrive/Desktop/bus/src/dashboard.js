@@ -1,4 +1,5 @@
 import { getSupabase, isSupabaseConfigured } from './supabase.js';
+import { resolveTenantContext } from './session.js';
 
 const BUS_ID = import.meta.env.VITE_DEFAULT_BUS_ID || 'bus_07';
 
@@ -6,6 +7,8 @@ let supabaseClient = null;
 let leafletMap = null;
 let busMarker = null;
 let activeBusId = BUS_ID;
+let schoolId = null;
+let sessionMode = null;
 let busChannel = null;
 let studentsChannel = null;
 let notifChannel = null;
@@ -15,6 +18,11 @@ let metaChannel = null;
 let studentsCache = [];
 let currentStudent = null;
 let currentLeg = 'to_pickup';
+let routeLabelFromMeta = 'Route A · Morning Run';
+let staffRole = null;
+let activePlatformTab = 'parent';
+let parentNavLine = null;
+let driverDial = '';
 
 const DEMO_ALERT_ROTATION = [
   {
@@ -97,7 +105,7 @@ function updateBusPosition(lat, lng, speedKmh, recordedAt, nextEtaMin) {
   }
   if (liveDot) liveDot.style.background = '#66BB6A';
   if (liveLabel && recordedAt) {
-    const busLabel = activeBusId === BUS_ID ? 'Bus 07' : activeBusId;
+    const busLabel = busDisplayLabel();
     liveLabel.textContent = `${busLabel} · Live · ${new Date(recordedAt).toLocaleTimeString()}`;
   }
 
@@ -106,6 +114,8 @@ function updateBusPosition(lat, lng, speedKmh, recordedAt, nextEtaMin) {
       vEta.textContent = `${nextEtaMin} min`;
     } else if (typeof nextEtaMin === 'number' && nextEtaMin === 0) {
       vEta.textContent = 'Arriving';
+    } else {
+      vEta.textContent = '—';
     }
   }
   syncParentEtaFromCard();
@@ -113,7 +123,7 @@ function updateBusPosition(lat, lng, speedKmh, recordedAt, nextEtaMin) {
 
 async function bootstrapBusTracking(busId) {
   const client = initSupabase();
-  if (!client) return;
+  if (!client || !schoolId) return;
 
   activeBusId = busId || BUS_ID;
 
@@ -121,6 +131,7 @@ async function bootstrapBusTracking(busId) {
     const { data, error } = await client
       .from('bus_state')
       .select('*')
+      .eq('school_id', schoolId)
       .eq('bus_id', activeBusId)
       .maybeSingle();
     if (!error && data && data.lat != null && data.lng != null) {
@@ -139,18 +150,19 @@ async function bootstrapBusTracking(busId) {
   if (busChannel) client.removeChannel(busChannel);
 
   busChannel = client
-    .channel(`bus_state_changes_${activeBusId}`)
+    .channel(`bus_state_${schoolId}_${activeBusId}`)
     .on(
       'postgres_changes',
       {
         event: '*',
         schema: 'public',
         table: 'bus_state',
-        filter: `bus_id=eq.${activeBusId}`,
+        filter: `school_id=eq.${schoolId}`,
       },
       (payload) => {
         const row = payload.new || payload.old;
         if (!row || row.lat == null || row.lng == null) return;
+        if (row.bus_id !== activeBusId) return;
         updateBusPosition(
           row.lat,
           row.lng,
@@ -219,7 +231,7 @@ function filterStudents(q) {
 
 async function loadStudents() {
   const client = initSupabase();
-  if (!client) {
+  if (!client || !schoolId) {
     studentsCache = [];
     renderStudentsList([]);
     return;
@@ -227,7 +239,8 @@ async function loadStudents() {
   const { data, error } = await client
     .from('students')
     .select('*')
-    .eq('bus_id', BUS_ID)
+    .eq('school_id', schoolId)
+    .eq('bus_id', activeBusId)
     .order('sort_order', { ascending: true });
   if (error) {
     console.error(error);
@@ -243,17 +256,17 @@ async function loadStudents() {
 
 function subscribeStudents() {
   const client = initSupabase();
-  if (!client) return;
+  if (!client || !schoolId) return;
   if (studentsChannel) client.removeChannel(studentsChannel);
   studentsChannel = client
-    .channel(`students_${BUS_ID}`)
+    .channel(`students_${schoolId}_${activeBusId}`)
     .on(
       'postgres_changes',
       {
         event: '*',
         schema: 'public',
         table: 'students',
-        filter: `bus_id=eq.${BUS_ID}`,
+        filter: `school_id=eq.${schoolId}`,
       },
       () => {
         loadStudents();
@@ -287,14 +300,15 @@ function renderNotifs(rows) {
 
 async function loadNotifications() {
   const client = initSupabase();
-  if (!client) {
+  if (!client || !schoolId) {
     renderNotifs([]);
     return;
   }
   const { data, error } = await client
     .from('bus_notifications')
     .select('*')
-    .eq('bus_id', BUS_ID)
+    .eq('school_id', schoolId)
+    .eq('bus_id', activeBusId)
     .order('created_at', { ascending: false })
     .limit(24);
   if (error) {
@@ -306,19 +320,22 @@ async function loadNotifications() {
 
 function subscribeNotifications() {
   const client = initSupabase();
-  if (!client) return;
+  if (!client || !schoolId) return;
   if (notifChannel) client.removeChannel(notifChannel);
   notifChannel = client
-    .channel(`bus_notifications_${BUS_ID}`)
+    .channel(`bus_notifications_${schoolId}_${activeBusId}`)
     .on(
       'postgres_changes',
       {
         event: 'INSERT',
         schema: 'public',
         table: 'bus_notifications',
-        filter: `bus_id=eq.${BUS_ID}`,
+        filter: `school_id=eq.${schoolId}`,
       },
-      () => loadNotifications(),
+      (payload) => {
+        const row = payload.new;
+        if (row && row.bus_id === activeBusId) loadNotifications();
+      },
     )
     .subscribe();
 }
@@ -396,14 +413,15 @@ function renderRouteStops(stops) {
 
 async function loadRouteStops() {
   const client = initSupabase();
-  if (!client) {
+  if (!client || !schoolId) {
     renderRouteStops([]);
     return;
   }
   const { data, error } = await client
     .from('route_stops')
     .select('*')
-    .eq('bus_id', BUS_ID)
+    .eq('school_id', schoolId)
+    .eq('bus_id', activeBusId)
     .order('sort_order', { ascending: true });
   if (error) {
     console.error(error);
@@ -414,25 +432,40 @@ async function loadRouteStops() {
 
 function subscribeRouteStops() {
   const client = initSupabase();
-  if (!client) return;
+  if (!client || !schoolId) return;
   if (routeChannel) client.removeChannel(routeChannel);
   routeChannel = client
-    .channel(`route_stops_${BUS_ID}`)
+    .channel(`route_stops_${schoolId}_${activeBusId}`)
     .on(
       'postgres_changes',
       {
         event: '*',
         schema: 'public',
         table: 'route_stops',
-        filter: `bus_id=eq.${BUS_ID}`,
+        filter: `school_id=eq.${schoolId}`,
       },
-      () => loadRouteStops(),
+      (payload) => {
+        const row = payload.new || payload.old;
+        if (row && row.bus_id === activeBusId) loadRouteStops();
+      },
     )
     .subscribe();
 }
 
+function busDisplayLabel() {
+  return activeBusId === 'bus_07' ? 'Bus 07' : activeBusId;
+}
+
+function defaultNavStatusLine() {
+  return `${busDisplayLabel()} is LIVE · ${routeLabelFromMeta}`;
+}
+
 function applyBusMeta(meta) {
-  if (!meta) return;
+  if (!meta) {
+    driverDial = '';
+    return;
+  }
+  if (meta.route_label) routeLabelFromMeta = meta.route_label;
   const initials = document.getElementById('driver-display-initials');
   const nameEl = document.getElementById('driver-display-name');
   const plateLine = document.getElementById('driver-plate-line');
@@ -440,7 +473,7 @@ function applyBusMeta(meta) {
   if (initials) initials.textContent = meta.driver_initials || '—';
   if (nameEl) nameEl.textContent = meta.driver_name || '—';
   if (plateLine) {
-    plateLine.textContent = [meta.plate, BUS_ID === 'bus_07' ? 'Bus 07' : BUS_ID]
+    plateLine.textContent = [meta.plate, busDisplayLabel()]
       .filter(Boolean)
       .join(' · ');
   }
@@ -449,39 +482,44 @@ function applyBusMeta(meta) {
       ? `Senior Driver · ${meta.school_name}`
       : 'Senior Driver';
   }
+  driverDial = (meta.phone_e164 && String(meta.phone_e164).trim()) || '';
+  const nav = document.getElementById('nav-status-text');
+  if (nav && !currentStudent) nav.textContent = defaultNavStatusLine();
 }
 
 async function loadBusMeta() {
   const client = initSupabase();
-  if (!client) return;
+  if (!client || !schoolId) return;
   const { data, error } = await client
     .from('bus_meta')
     .select('*')
-    .eq('bus_id', BUS_ID)
+    .eq('school_id', schoolId)
+    .eq('bus_id', activeBusId)
     .maybeSingle();
   if (error) {
     console.warn(error);
     return;
   }
-  applyBusMeta(data);
+  applyBusMeta(data || null);
 }
 
 function subscribeBusMeta() {
   const client = initSupabase();
-  if (!client) return;
+  if (!client || !schoolId) return;
   if (metaChannel) client.removeChannel(metaChannel);
   metaChannel = client
-    .channel(`bus_meta_${BUS_ID}`)
+    .channel(`bus_meta_${schoolId}_${activeBusId}`)
     .on(
       'postgres_changes',
       {
         event: '*',
         schema: 'public',
         table: 'bus_meta',
-        filter: `bus_id=eq.${BUS_ID}`,
+        filter: `school_id=eq.${schoolId}`,
       },
       (payload) => {
-        applyBusMeta(payload.new);
+        const row = payload.new || payload.old;
+        if (row && row.bus_id === activeBusId) applyBusMeta(payload.new);
       },
     )
     .subscribe();
@@ -495,7 +533,7 @@ function updateParentBanner(statusText) {
 }
 
 function syncParentEtaFromCard() {
-  if (!currentStudent) return;
+  if (!currentStudent || activePlatformTab !== 'parent') return;
   const etaCard = document.getElementById('v-eta');
   const nextWrap = document.getElementById('parent-next');
   const stopEl = document.getElementById('parent-next-stop');
@@ -510,12 +548,326 @@ function syncParentEtaFromCard() {
   nextWrap.style.display = 'flex';
 }
 
-async function handleParentLogin(event) {
+function showLoginOverlay() {
+  document.getElementById('parent-login')?.classList.remove('hidden');
+}
+
+function hideLoginOverlay() {
+  document.getElementById('parent-login')?.classList.add('hidden');
+}
+
+function updateStaffOnlyUi() {
+  document.querySelectorAll('[data-staff-only]').forEach((el) => {
+    el.style.display = sessionMode === 'staff' ? '' : 'none';
+  });
+}
+
+function applyAuthContext(ctx) {
+  schoolId = ctx.schoolId;
+  sessionMode = ctx.mode;
+  staffRole = ctx.staffRole || null;
+  parentNavLine = null;
+
+  const pill = document.getElementById('user-pill');
+  if (pill && ctx.user?.email) {
+    pill.textContent = `${ctx.user.email.split('@')[0]} · Sign out`;
+  }
+
+  updateStaffOnlyUi();
+
+  if (ctx.mode === 'parent' && ctx.parentProfile?.students) {
+    const profile = ctx.parentProfile;
+    const st = profile.students;
+    currentStudent = {
+      studentName: st.full_name,
+      stopName: profile.stop_name || '',
+      busId: st.bus_id,
+      studentId: st.id,
+    };
+    activeBusId = st.bus_id;
+
+    const nameSpan = document.getElementById('banner-student-name');
+    const busSpan = document.getElementById('banner-bus-label');
+    const bl = st.bus_id === 'bus_07' ? 'Bus 07' : st.bus_id;
+    if (nameSpan) nameSpan.textContent = st.full_name;
+    if (busSpan) busSpan.textContent = bl;
+    parentNavLine = `Tracking ${st.full_name} · ${profile.stop_name || ''} · Morning run (${bl})`;
+    currentLeg = 'to_pickup';
+    updateParentBanner(
+      'Bus will leave school, then head to your home stop for pick‑up.',
+    );
+  } else {
+    currentStudent = null;
+    activeBusId = BUS_ID;
+    const pb = document.getElementById('parent-banner');
+    const pn = document.getElementById('parent-next');
+    const pqa = document.getElementById('parent-quick-actions');
+    if (pb) pb.style.display = 'none';
+    if (pn) pn.style.display = 'none';
+    if (pqa) pqa.style.display = 'none';
+  }
+}
+
+function canPostAlerts() {
+  return (
+    sessionMode === 'staff' &&
+    staffRole &&
+    ['school_admin', 'driver', 'staff_viewer'].includes(staffRole)
+  );
+}
+
+function canUpdateStudentAttendance() {
+  return canPostAlerts();
+}
+
+function applyPlatformTab(role) {
+  activePlatformTab = role;
+  if (document.body) document.body.dataset.platform = role;
+
+  const adminConsole = document.getElementById('admin-console');
+  if (adminConsole) {
+    adminConsole.style.display =
+      role === 'admin' && sessionMode === 'staff' ? 'block' : 'none';
+  }
+
+  const banner = document.getElementById('parent-banner');
+  const nextWrap = document.getElementById('parent-next');
+  const parentActions = document.getElementById('parent-quick-actions');
+  const showParentUi = role === 'parent' && currentStudent;
+  if (banner) banner.style.display = showParentUi ? 'flex' : 'none';
+  if (nextWrap) nextWrap.style.display = showParentUi ? 'flex' : 'none';
+  if (parentActions) parentActions.style.display = showParentUi ? 'flex' : 'none';
+  if (showParentUi) syncParentEtaFromCard();
+
+  const titleEl = document.getElementById('student-card-title');
+  if (titleEl) {
+    const bl = busDisplayLabel();
+    if (role === 'teacher') titleEl.textContent = `Students — ${bl} (teacher roster)`;
+    else if (role === 'admin') titleEl.textContent = `Students — ${bl} (school admin)`;
+    else
+      titleEl.textContent = currentStudent
+        ? `Students — ${bl} (your child’s bus)`
+        : `Students — ${bl}`;
+  }
+
+  const statusEl = document.getElementById('nav-status-text');
+  if (statusEl) {
+    if (role === 'parent') {
+      if (currentStudent && parentNavLine) statusEl.textContent = parentNavLine;
+      else statusEl.textContent = defaultNavStatusLine();
+    } else if (role === 'teacher') {
+      statusEl.textContent = `${busDisplayLabel()} · ${routeLabelFromMeta} · Teacher platform`;
+    } else if (role === 'admin') {
+      statusEl.textContent = `${busDisplayLabel()} · ${routeLabelFromMeta} · Admin platform`;
+    } else {
+      statusEl.textContent = defaultNavStatusLine();
+    }
+  }
+
+  if (role === 'admin' && sessionMode === 'staff') void loadAdminPanelStats();
+}
+
+function initDefaultPlatformTab() {
+  const tab = sessionMode === 'staff' ? 'teacher' : 'parent';
+  const btn = document.querySelector(`.role-tab[data-platform="${tab}"]`);
+  document.querySelectorAll('.role-tab').forEach((t) => {
+    t.className = 'role-tab';
+    t.setAttribute('aria-pressed', 'false');
+  });
+  if (btn && btn.offsetParent !== null) {
+    btn.className = `role-tab active-${tab}`;
+    btn.setAttribute('aria-pressed', 'true');
+  } else {
+    const parentBtn = document.querySelector('.role-tab[data-platform="parent"]');
+    if (parentBtn) {
+      parentBtn.className = 'role-tab active-parent';
+      parentBtn.setAttribute('aria-pressed', 'true');
+    }
+    applyPlatformTab('parent');
+    return;
+  }
+  applyPlatformTab(tab);
+}
+
+async function loadAdminPanelStats() {
+  const client = initSupabase();
+  const nameEl = document.getElementById('admin-school-name');
+  const busEl = document.getElementById('admin-bus-count');
+  const stuEl = document.getElementById('admin-student-count');
+  const actEl = document.getElementById('admin-active-bus');
+  if (!client || !schoolId || sessionMode !== 'staff') return;
+
+  const { data: sch } = await client
+    .from('schools')
+    .select('name')
+    .eq('id', schoolId)
+    .maybeSingle();
+  if (nameEl && sch?.name) nameEl.textContent = sch.name;
+
+  const { count: busCount, error: e1 } = await client
+    .from('bus_meta')
+    .select('*', { count: 'exact', head: true })
+    .eq('school_id', schoolId);
+  const { count: stuCount, error: e2 } = await client
+    .from('students')
+    .select('*', { count: 'exact', head: true })
+    .eq('school_id', schoolId);
+  if (e1) console.warn(e1);
+  if (e2) console.warn(e2);
+  if (busEl) busEl.textContent = busCount != null ? String(busCount) : '—';
+  if (stuEl) stuEl.textContent = stuCount != null ? String(stuCount) : '—';
+  if (actEl) actEl.textContent = busDisplayLabel();
+}
+
+function openSupabaseDashboardHint() {
+  const url = import.meta.env.VITE_SUPABASE_URL || '';
+  const m = url.match(/https?:\/\/([^.]+)\.supabase\.co/);
+  if (m) {
+    window.open(`https://supabase.com/dashboard/project/${m[1]}`, '_blank');
+  } else {
+    toast(
+      'Configure VITE_SUPABASE_URL with your *.supabase.co URL to open the project dashboard.',
+    );
+  }
+}
+
+async function parentReportAbsence() {
+  if (sessionMode !== 'parent' || !currentStudent?.studentId) {
+    toast('Sign in as a parent linked to a student to report absence.');
+    return;
+  }
+  const client = initSupabase();
+  if (!client) return;
+  const { error } = await client.rpc('parent_set_transport_status', {
+    p_student_id: currentStudent.studentId,
+    p_status: 'abs',
+  });
+  if (error) {
+    console.error(error);
+    toast(
+      error.message ||
+        'Could not update status. Run the latest Supabase migration (parent_set_transport_status).',
+    );
+    return;
+  }
+  toast('Absence reported. The school and driver will see your child as absent for this run.');
+  await loadStudents();
+}
+
+async function parentMarkWaiting() {
+  if (sessionMode !== 'parent' || !currentStudent?.studentId) {
+    toast('Sign in as a parent linked to a student.');
+    return;
+  }
+  const client = initSupabase();
+  if (!client) return;
+  const { error } = await client.rpc('parent_set_transport_status', {
+    p_student_id: currentStudent.studentId,
+    p_status: 'wait',
+  });
+  if (error) {
+    console.error(error);
+    toast(error.message || 'Could not update status.');
+    return;
+  }
+  toast('Status set to waiting. Staff can see the update on the roster.');
+  await loadStudents();
+}
+
+function callDriverFromMeta() {
+  const tel = driverDial.replace(/\s/g, '');
+  if (tel) window.location.href = `tel:${tel}`;
+  else
+    toast(
+      'No driver phone on file. Set phone_e164 on bus_meta in Supabase for this bus.',
+    );
+}
+
+function openSmsToParents() {
+  if (sessionMode !== 'staff') {
+    toast('Staff use this to draft an SMS to families. Parents see alerts in the live feed.');
+    return;
+  }
+  const body = encodeURIComponent(
+    `Bus update (${busDisplayLabel()} — ${routeLabelFromMeta}): `,
+  );
+  window.open(`sms:?body=${body}`, '_blank');
+  toast('SMS app opened with a draft. Add recipients from your school directory.');
+}
+
+async function openAttendanceModal() {
+  const modal = document.getElementById('attendance-modal');
+  const body = document.getElementById('attendance-modal-body');
+  if (!modal || !body) return;
+  await loadStudents();
+  const readonly = !canUpdateStudentAttendance();
+  if (!studentsCache.length) {
+    body.innerHTML =
+      '<p style="font-weight:600;color:var(--text-soft);">No students on this bus.</p>';
+  } else {
+    body.innerHTML = studentsCache
+      .map((s) => {
+        const opts = ['on', 'wait', 'abs', 'drop']
+          .map(
+            (v) =>
+              `<option value="${v}"${s.status === v ? ' selected' : ''}>${escapeHtml(stLabel[v] || v)}</option>`,
+          )
+          .join('');
+        return `<div class="attendance-row">
+      <div><strong>${escapeHtml(s.full_name)}</strong><div style="font-size:0.75rem;color:var(--text-soft)">${escapeHtml(s.grade)}</div></div>
+      <select data-student-id="${escapeHtml(s.id)}" ${readonly ? 'disabled' : ''}>${opts}</select>
+    </div>`;
+      })
+      .join('');
+    body.querySelectorAll('select[data-student-id]').forEach((sel) => {
+      sel.addEventListener('change', () => void onAttendanceChange(sel));
+    });
+  }
+  modal.classList.remove('hidden');
+}
+
+function closeAttendanceModal() {
+  document.getElementById('attendance-modal')?.classList.add('hidden');
+}
+
+async function onAttendanceChange(selectEl) {
+  const id = selectEl.getAttribute('data-student-id');
+  const status = selectEl.value;
+  if (!id || !canUpdateStudentAttendance()) return;
+  const client = initSupabase();
+  if (!client || !schoolId) return;
+  const { error } = await client
+    .from('students')
+    .update({ status })
+    .eq('id', id)
+    .eq('school_id', schoolId);
+  if (error) {
+    console.error(error);
+    toast(error.message || 'Could not update attendance.');
+    await loadStudents();
+    return;
+  }
+  toast('Attendance saved.');
+  await loadStudents();
+}
+
+function startDataSubscriptions() {
+  bootstrapBusTracking(activeBusId);
+  loadStudents();
+  subscribeStudents();
+  loadNotifications();
+  subscribeNotifications();
+  loadRouteStops();
+  subscribeRouteStops();
+  loadBusMeta();
+  subscribeBusMeta();
+}
+
+async function handleSessionLogin(event) {
   event.preventDefault();
-  const input = document.getElementById('admission-input');
+  const email = (document.getElementById('login-email')?.value || '').trim();
+  const password = document.getElementById('login-password')?.value || '';
   const errorEl = document.getElementById('login-error');
-  if (!input) return;
-  const admission = input.value.trim().toUpperCase();
   const client = initSupabase();
 
   if (!client) {
@@ -525,64 +877,56 @@ async function handleParentLogin(event) {
     }
     return;
   }
+  if (!email || !password) {
+    if (errorEl) errorEl.textContent = 'Enter email and password.';
+    return;
+  }
 
-  const { data: profile, error } = await client
-    .from('parent_profiles')
-    .select('*, students(*)')
-    .eq('admission_code', admission)
-    .maybeSingle();
+  const { error } = await client.auth.signInWithPassword({ email, password });
+  if (error) {
+    if (errorEl) errorEl.textContent = error.message || 'Sign-in failed.';
+    return;
+  }
 
-  if (error || !profile || !profile.students) {
+  const ctx = await resolveTenantContext(client);
+  if (!ctx) {
+    await client.auth.signOut();
     if (errorEl) {
       errorEl.textContent =
-        'We could not find that admission number. Please check and try again.';
+        'This account is not linked to a school. Ask your administrator to add you as staff or parent.';
     }
     return;
   }
 
-  const st = profile.students;
-  currentStudent = {
-    studentName: st.full_name,
-    stopName: profile.stop_name || '',
-    busId: st.bus_id,
-    studentId: st.id,
-  };
   if (errorEl) errorEl.textContent = '';
-
-  const banner = document.getElementById('parent-banner');
-  const loginOverlay = document.getElementById('parent-login');
-  const nameSpan = document.getElementById('banner-student-name');
-  const busSpan = document.getElementById('banner-bus-label');
-  const navStatus = document.getElementById('nav-status-text');
-
-  const busLabel = st.bus_id === BUS_ID ? 'Bus 07' : st.bus_id;
-  if (nameSpan) nameSpan.textContent = st.full_name;
-  if (busSpan) busSpan.textContent = busLabel;
-  if (banner) banner.style.display = 'flex';
-  if (loginOverlay) loginOverlay.classList.add('hidden');
-  if (navStatus) {
-    navStatus.textContent = `Tracking ${st.full_name} · ${profile.stop_name || ''} · Morning run (${busLabel})`;
-  }
-  currentLeg = 'to_pickup';
-  updateParentBanner(
-    'Bus will leave school, then head to your home stop for pick‑up.',
-  );
-  syncParentEtaFromCard();
-  bootstrapBusTracking(st.bus_id);
-  toast(`Signed in. Tracking ${st.full_name} on ${busLabel}.`);
+  applyAuthContext(ctx);
+  hideLoginOverlay();
+  startDataSubscriptions();
+  initDefaultPlatformTab();
+  toast(`Signed in as ${ctx.mode === 'parent' ? 'parent' : 'school staff'}.`);
 }
 
-function skipLogin() {
-  const loginOverlay = document.getElementById('parent-login');
-  if (loginOverlay) loginOverlay.classList.add('hidden');
+async function signOut() {
+  const c = initSupabase();
+  if (c) await c.auth.signOut();
+  window.location.reload();
 }
 
 async function fireNotif() {
+  if (!canPostAlerts()) {
+    toast(
+      sessionMode === 'parent'
+        ? 'Alerts appear here when staff post them. Parents are notified in this feed.'
+        : 'Your account cannot post simulated alerts. Use a driver, teacher, or admin login.',
+    );
+    return;
+  }
   const client = initSupabase();
-  if (client && demoAlertIndex < DEMO_ALERT_ROTATION.length) {
+  if (client && schoolId && demoAlertIndex < DEMO_ALERT_ROTATION.length) {
     const a = DEMO_ALERT_ROTATION[demoAlertIndex++];
     const { error } = await client.from('bus_notifications').insert({
-      bus_id: BUS_ID,
+      school_id: schoolId,
+      bus_id: activeBusId,
       category: a.category,
       icon: a.icon,
       message: a.message,
@@ -595,8 +939,8 @@ async function fireNotif() {
         syncParentEtaFromCard();
       }
     }
-  } else if (!client) {
-    toast('Connect Supabase to push alerts to the database.');
+  } else if (!client || !schoolId) {
+    toast('Sign in and connect Supabase to push alerts.');
   } else {
     toast('Demo alert queue finished — add rows in Supabase or extend DEMO_ALERT_ROTATION.');
   }
@@ -604,21 +948,16 @@ async function fireNotif() {
   if (el) el.textContent = String(parseInt(el.textContent || '0', 10) + 1);
 }
 
-const roleStatus = {
-  parent: 'Bus 07 is LIVE · Route A · Morning Run',
-  teacher: 'Bus 07 · Route A · Class overview',
-  admin: 'All buses · Dashboard · 43industries',
-};
-
 function setRole(el, role) {
   document.querySelectorAll('.role-tab').forEach((t) => {
     t.className = 'role-tab';
     t.setAttribute('aria-pressed', 'false');
   });
-  el.className = `role-tab active-${role}`;
-  el.setAttribute('aria-pressed', 'true');
-  const statusEl = document.getElementById('nav-status-text');
-  if (statusEl) statusEl.textContent = roleStatus[role] || roleStatus.parent;
+  if (el) {
+    el.className = `role-tab active-${role}`;
+    el.setAttribute('aria-pressed', 'true');
+  }
+  applyPlatformTab(role);
 }
 
 function toast(msg) {
@@ -631,27 +970,54 @@ function toast(msg) {
   setTimeout(() => el.remove(), 2500);
 }
 
-function confirmEmergency() {
+async function confirmEmergency() {
+  const bl = busDisplayLabel();
   if (
-    confirm(
-      'Report emergency for Bus 07? School and parents will be notified.',
+    !confirm(
+      `Report emergency for ${bl}? This posts a live alert to the bus feed for your school.`,
     )
   ) {
-    toast('Emergency reported. Help is on the way.');
+    return;
   }
+  const client = initSupabase();
+  if (!client || !schoolId || !canPostAlerts()) {
+    toast(
+      'Only operational staff can post an emergency to the database. Contact the driver or office.',
+    );
+    return;
+  }
+  const { error } = await client.from('bus_notifications').insert({
+    school_id: schoolId,
+    bus_id: activeBusId,
+    category: 'n-orange',
+    icon: '🚨',
+    message: `EMERGENCY — ${bl}. Coordinators: follow protocol and contact families.`,
+  });
+  if (error) {
+    console.error(error);
+    toast(error.message || 'Could not post emergency alert.');
+    return;
+  }
+  toast('Emergency alert posted to the live feed.');
 }
 
-window.handleParentLogin = handleParentLogin;
-window.skipLogin = skipLogin;
+window.handleSessionLogin = handleSessionLogin;
+window.signOut = signOut;
 window.filterStudents = filterStudents;
 window.fireNotif = fireNotif;
 window.setRole = setRole;
 window.confirmEmergency = confirmEmergency;
 window.toast = toast;
+window.callDriverFromMeta = callDriverFromMeta;
+window.openSmsToParents = openSmsToParents;
+window.openSupabaseDashboardHint = openSupabaseDashboardHint;
+window.openAttendanceModal = openAttendanceModal;
+window.closeAttendanceModal = closeAttendanceModal;
+window.parentReportAbsence = parentReportAbsence;
+window.parentMarkWaiting = parentMarkWaiting;
 
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   initRealtimeMap();
-  bootstrapBusTracking(BUS_ID);
 
   if (!isSupabaseConfigured()) {
     toast(
@@ -662,12 +1028,28 @@ window.addEventListener('load', () => {
   }
 
   initSupabase();
-  loadStudents();
-  subscribeStudents();
-  loadNotifications();
-  subscribeNotifications();
-  loadRouteStops();
-  subscribeRouteStops();
-  loadBusMeta();
-  subscribeBusMeta();
+  const client = initSupabase();
+  const { data: { session } } = await client.auth.getSession();
+
+  if (!session) {
+    showLoginOverlay();
+    return;
+  }
+
+  const ctx = await resolveTenantContext(client);
+  if (!ctx) {
+    await client.auth.signOut();
+    showLoginOverlay();
+    toast('Session is not linked to any school. Contact your administrator.');
+    return;
+  }
+
+  applyAuthContext(ctx);
+  hideLoginOverlay();
+  startDataSubscriptions();
+  initDefaultPlatformTab();
+
+  client.auth.onAuthStateChange((event) => {
+    if (event === 'SIGNED_OUT') window.location.reload();
+  });
 });
